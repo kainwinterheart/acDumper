@@ -430,12 +430,12 @@ int main(int argc, char *argv[]) {
 	#endif
 
 	watcher = new acWatcher;
-	pthread_t watcherThread = 0;
+	pthread_t watcherThread;
 
 	if (argc > 1) {
 		watcher->deactivateOnTaskFinish = true;
 		threadSetup( argv[1], watcher );
-	} else if (watcherThread == 0) pthread_create( &watcherThread, NULL, scannerThread, NULL );
+	} else pthread_create( &watcherThread, NULL, scannerThread, NULL );
 
 	while ( watcher->isActive() ) sleep(1);
 	while ( watcher->isTaskActive() ) sleep(watcher->currentTasks);
