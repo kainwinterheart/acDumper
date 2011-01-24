@@ -10,6 +10,9 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef _WIN32
+	#include <winsock.h>
+#endif
 #include <mysql.h>
 #include <rude/config.h>
 
@@ -60,6 +63,12 @@ inline int indexOf(const char* where, const char* what) {
 }*/
 
 /* **************** */
+
+#ifdef _WIN32
+inline void sleep(int seconds) {
+	Sleep(seconds*1000);
+}
+#endif
 
 class acDumper {
 public:
