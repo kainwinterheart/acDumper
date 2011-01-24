@@ -1,0 +1,14 @@
+[sample_task_1]
+username =
+password =
+server =
+database =
+port = 3306
+outdir =
+encoding = utf-8
+jobtime = * 17 */1 * *
+
+[sample_task_2]
+database =
+alias = sample_task_1
+jobtime = 30 3 * * Tue
