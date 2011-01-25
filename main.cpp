@@ -408,13 +408,13 @@ void* scannerThread(void* pointer) {
 	while (watcher->isActive()) {
 
 		#if USE_MUTEX
-		pthread_mutex_lock(&(watcher->mutex));
+			pthread_mutex_lock(&(watcher->mutex));
 		#endif
 
 		acMultiDim* jobList = watcher->lookForJob();
 
 		#if USE_MUTEX
-		pthread_mutex_unlock(&(watcher->mutex));
+			pthread_mutex_unlock(&(watcher->mutex));
 		#endif
 
 		if (jobList != NULL)
@@ -448,6 +448,7 @@ int main(int argc, char *argv[]) {
 
 	if (argc > 1) {
 		watcher->deactivateOnTaskFinish = true;
+		watcher->forceDisableMutex = true;
 		threadSetup( argv[1], watcher );
 	} else pthread_create( &watcherThread, NULL, scannerThread, NULL );
 

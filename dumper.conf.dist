@@ -4,7 +4,15 @@ password =
 server =
 database =
 port = 3306
-outdir =
+
+# example for linux:
+outdir = "/home/dumper"
+
+# example for windows:
+# outdir = "C:\\dumper"
+
+# and yeah, it's important to write exactly "\\" for windows
+
 encoding = utf-8
 jobtime = * 17 */1 * *
 

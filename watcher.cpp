@@ -11,9 +11,10 @@ acWatcher::acWatcher() {
 	currentTasks = 0;
 	lfjActive = false;
 	deactivateOnTaskFinish = false;
+	forceDisableMutex = false;
 
 	#if USE_MUTEX
-	mutex = PTHREAD_MUTEX_INITIALIZER;
+		mutex = PTHREAD_MUTEX_INITIALIZER;
 	#endif
 }
 
@@ -63,13 +64,13 @@ void acWatcher::runTask(const char* taskName) {
 	// sleep(currentTasks);
 
 	#if USE_MUTEX
-	pthread_mutex_lock(&mutex);
+		if (!forceDisableMutex) pthread_mutex_lock(&mutex);
 	#endif
 
 	acDumper* dumper = new acDumper( taskName );
 
 	#if USE_MUTEX
-	pthread_mutex_unlock(&mutex);
+		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
 	#endif
 
 	string outName = dumper->getSaveDir() + ToString( taskName ) + ".log";
@@ -106,13 +107,13 @@ void acWatcher::runTask(const char* taskName) {
 	cout.close();
 
 	#if USE_MUTEX
-	pthread_mutex_lock(&mutex);
+		if (!forceDisableMutex) pthread_mutex_lock(&mutex);
 	#endif
 
 	delete dumper;
 
 	#if USE_MUTEX
-	pthread_mutex_unlock(&mutex);
+		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
 	#endif
 }
 

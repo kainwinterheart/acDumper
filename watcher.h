@@ -20,6 +20,7 @@ public:
 
     int currentTasks;
     bool deactivateOnTaskFinish;
+    bool forceDisableMutex;
 
     #if USE_MUTEX
     pthread_mutex_t mutex;
