@@ -14,11 +14,15 @@ acWatcher::acWatcher() {
 	forceDisableMutex = false;
 
 	#if USE_MUTEX
-		mutex = PTHREAD_MUTEX_INITIALIZER;
+		//mutex = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_init(&mutex, NULL);
 	#endif
 }
 
 acWatcher::~acWatcher() {
+	#if USE_MUTEX
+		pthread_mutex_destroy(&mutex);
+	#endif
 	currentTasks = 0;
 	Deactivate();
 }

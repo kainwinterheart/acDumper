@@ -23,7 +23,7 @@ public:
     bool forceDisableMutex;
 
     #if USE_MUTEX
-    pthread_mutex_t mutex;
+    	pthread_mutex_t mutex;
 	#endif
 
 private:

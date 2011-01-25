@@ -44,6 +44,10 @@ inline void* threadRun(void* pointer) {
 	if (watcher->deactivateOnTaskFinish) watcher->Deactivate();
 
 	pthread_exit(NULL);
+
+	#ifdef _WIN32
+		return NULL;
+	#endif
 }
 
 inline pthread_t threadSetup(const char* taskName, acWatcher* watcher) {

@@ -434,6 +434,10 @@ void* scannerThread(void* pointer) {
 		}
 	}
 	pthread_exit(NULL);
+
+	#ifdef _WIN32
+		return NULL;
+	#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -444,13 +448,21 @@ int main(int argc, char *argv[]) {
 	#endif
 
 	watcher = new acWatcher;
-	pthread_t watcherThread;
 
+	#ifndef _WIN32
 	if (argc > 1) {
 		watcher->deactivateOnTaskFinish = true;
 		watcher->forceDisableMutex = true;
 		threadSetup( argv[1], watcher );
-	} else pthread_create( &watcherThread, NULL, scannerThread, NULL );
+	} else {
+	#endif
+
+	pthread_t watcherThread;
+	pthread_create( &watcherThread, NULL, scannerThread, NULL );
+
+	#ifndef _WIN32
+	}
+	#endif
 
 	while ( watcher->isActive() ) sleep(1);
 	while ( watcher->isTaskActive() ) sleep(watcher->currentTasks);
