@@ -19,15 +19,27 @@ inline void* threadRun(void* pointer) {
 
 	if (watcher->isTaskActive()) sleep(watcher->currentTasks);
 
+	#if USE_MUTEX
 	pthread_mutex_lock(&(watcher->mutex));
+	#endif
+
 	watcher->currentTasks++;
+
+	#if USE_MUTEX
 	pthread_mutex_unlock(&(watcher->mutex));
+	#endif
 
 	watcher->startTask( taskName );
 
+	#if USE_MUTEX
 	pthread_mutex_lock(&(watcher->mutex));
+	#endif
+
 	watcher->currentTasks--;
+
+	#if USE_MUTEX
 	pthread_mutex_unlock(&(watcher->mutex));
+	#endif
 
 	if (watcher->deactivateOnTaskFinish) watcher->Deactivate();
 

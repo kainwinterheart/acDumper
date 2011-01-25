@@ -19,8 +19,11 @@ public:
     acMultiDim* lookForJob();
 
     int currentTasks;
-    pthread_mutex_t mutex;
     bool deactivateOnTaskFinish;
+
+    #if USE_MUTEX
+    pthread_mutex_t mutex;
+	#endif
 
 private:
     void runTask(const char*);

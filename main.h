@@ -2,6 +2,7 @@
 #define ACDUMPER_H
 
 #define CONFIG "dumper.conf"
+#define USE_MUTEX true
 
 #define JOB_STATUS_ACTIVE "active"
 
@@ -89,7 +90,6 @@ public:
 private:
     MYSQL* conn;
     rude::Config* acConfig;
-    //rude::Config acConfig1;
     std::string saveDir;
     std::string taskName;
     std::string initialTaskName;

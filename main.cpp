@@ -16,6 +16,7 @@
 
 using namespace std;
 using namespace pcrecpp;
+using namespace rude;
 
 acWatcher* watcher;
 
@@ -201,7 +202,7 @@ acDumper::acDumper(string _taskName) {
 
     startTime = time( NULL );
 
-    acConfig = new rude::Config();
+    acConfig = new Config();
     ifstream ifile( CONFIG );
 
     if ( ifile.is_open() ) {
@@ -406,9 +407,15 @@ int acDumper::getStartTime() {
 void* scannerThread(void* pointer) {
 	while (watcher->isActive()) {
 
+		#if USE_MUTEX
 		pthread_mutex_lock(&(watcher->mutex));
+		#endif
+
 		acMultiDim* jobList = watcher->lookForJob();
+
+		#if USE_MUTEX
 		pthread_mutex_unlock(&(watcher->mutex));
+		#endif
 
 		if (jobList != NULL)
 			if (jobList->getSize_dim1() > -1)

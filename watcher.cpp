@@ -11,7 +11,10 @@ acWatcher::acWatcher() {
 	currentTasks = 0;
 	lfjActive = false;
 	deactivateOnTaskFinish = false;
+
+	#if USE_MUTEX
 	mutex = PTHREAD_MUTEX_INITIALIZER;
+	#endif
 }
 
 acWatcher::~acWatcher() {
@@ -23,10 +26,10 @@ acMultiDim* acWatcher::lookForJob() {
 	if ((isActive()) && (!isLFJActive())) {
 		lfjActive = true;
 		acDumper* dumper = new acDumper( "" );
-		//acMultiDim* jobList = dumper->lookForJob();
-		//delete dumper;
+		acMultiDim* jobList = dumper->lookForJob();
+		delete dumper;
 		lfjActive = false;
-		return NULL;// jobList;
+		return jobList;
 	} else return NULL;
 }
 
@@ -59,9 +62,15 @@ void acWatcher::startTask(const char* taskName) {
 void acWatcher::runTask(const char* taskName) {
 	// sleep(currentTasks);
 
+	#if USE_MUTEX
 	pthread_mutex_lock(&mutex);
+	#endif
+
 	acDumper* dumper = new acDumper( taskName );
+
+	#if USE_MUTEX
 	pthread_mutex_unlock(&mutex);
+	#endif
 
 	string outName = dumper->getSaveDir() + ToString( taskName ) + ".log";
 	ofstream cout ( outName.c_str(), ios::trunc );
@@ -96,9 +105,15 @@ void acWatcher::runTask(const char* taskName) {
 
 	cout.close();
 
+	#if USE_MUTEX
 	pthread_mutex_lock(&mutex);
+	#endif
+
 	delete dumper;
+
+	#if USE_MUTEX
 	pthread_mutex_unlock(&mutex);
+	#endif
 }
 
 #endif
