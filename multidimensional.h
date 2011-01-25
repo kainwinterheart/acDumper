@@ -22,6 +22,8 @@ public:
     int getSize_dim1 ();
     int getSize_dim2 ();
 
+    void cleanup();
+
 private:
     std::vector<std::string> dim1;
     std::vector<std::string> dim2;

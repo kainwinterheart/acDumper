@@ -11,6 +11,10 @@ acMultiDim::acMultiDim() {
 }
 
 acMultiDim::~acMultiDim() {
+	cleanup();
+}
+
+void acMultiDim::cleanup() {
 	if (dim1_size > -1) {
 		dim1.erase(dim1.begin());
 		vector<string>().swap(dim1);

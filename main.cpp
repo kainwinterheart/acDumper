@@ -397,11 +397,10 @@ int acDumper::getStartTime() {
 }
 
 void* scannerThread(void* pointer) {
-	acMultiDim* jobList;
 	while (watcher->isActive()) {
 
 		pthread_mutex_lock(&(watcher->mutex));
-		jobList = watcher->lookForJob();
+		acMultiDim* jobList = watcher->lookForJob();
 		pthread_mutex_unlock(&(watcher->mutex));
 
 		if (jobList != NULL)
@@ -413,12 +412,13 @@ void* scannerThread(void* pointer) {
 						sleep(watcher->currentTasks);
 					}
 
+		//jobList->cleanup();
+		//delete jobList;
 		for (int i = 0; i < 50; i++) {
 			sleep(1);
 			if (!watcher->isActive()) break;
 		}
 	}
-	delete jobList;
 	pthread_exit(NULL);
 }
 
