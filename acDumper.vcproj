@@ -132,7 +132,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="libmysql.lib libpthreadGC2.a pcrecpp.lib rudeconfig.lib"
+				AdditionalOptions="libmysql.lib libpthreadGC2.a pcrecpp.lib librudeconfig.a"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"

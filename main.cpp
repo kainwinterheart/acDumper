@@ -157,13 +157,13 @@ string acDumper::getSaveDir() {
 
 	_saveDir = _saveDir + separator + taskName + "_" + ToString( startTime ) + separator;
 
-	#ifdef _WIN32/*
+	#ifdef _WIN32
 	if (CreateDirectory((LPCWSTR)_saveDir.c_str(), NULL) == 0) {
 		if (GetLastError() == ERROR_PATH_NOT_FOUND) {
 			mustBreak = true;
 			_saveDir = "";
 		}
-	}*/
+	}
 	#else
 	if (closedir(opendir(_saveDir.c_str())) == -1) {
 		if (mkdir(_saveDir.c_str(), 0755) == -1) {
