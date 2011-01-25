@@ -89,6 +89,7 @@ public:
 private:
     MYSQL* conn;
     rude::Config* acConfig;
+    //rude::Config acConfig1;
     std::string saveDir;
     std::string taskName;
     std::string initialTaskName;

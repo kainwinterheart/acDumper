@@ -23,10 +23,10 @@ acMultiDim* acWatcher::lookForJob() {
 	if ((isActive()) && (!isLFJActive())) {
 		lfjActive = true;
 		acDumper* dumper = new acDumper( "" );
-		acMultiDim* jobList = dumper->lookForJob();
-		delete dumper;
+		//acMultiDim* jobList = dumper->lookForJob();
+		//delete dumper;
 		lfjActive = false;
-		return jobList;
+		return NULL;// jobList;
 	} else return NULL;
 }
 

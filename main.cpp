@@ -158,12 +158,19 @@ string acDumper::getSaveDir() {
 	_saveDir = _saveDir + separator + taskName + "_" + ToString( startTime ) + separator;
 
 	#ifdef _WIN32
-	if (CreateDirectory((LPCWSTR)_saveDir.c_str(), NULL) == 0) {
+	/*int len = strlen(_saveDir.c_str())+1;
+	wchar_t *wText = new wchar_t[len];
+	memset(wText,0,len);
+	::MultiByteToWideChar(  CP_ACP, NULL,_saveDir.c_str(), -1, wText,len );
+
+	if (CreateDirectory(wText, NULL) == 0) {*/
+	if (CreateDirectory(_saveDir.c_str(), NULL) == 0) {
 		if (GetLastError() == ERROR_PATH_NOT_FOUND) {
 			mustBreak = true;
 			_saveDir = "";
 		}
 	}
+	//delete[] wText;
 	#else
 	if (closedir(opendir(_saveDir.c_str())) == -1) {
 		if (mkdir(_saveDir.c_str(), 0755) == -1) {
@@ -194,7 +201,7 @@ acDumper::acDumper(string _taskName) {
 
     startTime = time( NULL );
 
-    acConfig = new rude::Config;
+    acConfig = new rude::Config();
     ifstream ifile( CONFIG );
 
     if ( ifile.is_open() ) {
