@@ -43,6 +43,9 @@ inline void* threadRun(void* pointer) {
 
 	if (watcher->deactivateOnTaskFinish) watcher->Deactivate();
 
+	delete[] taskName;
+	//delete info;
+
 	pthread_exit(NULL);
 
 	#ifdef _WIN32

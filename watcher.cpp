@@ -92,7 +92,7 @@ void acWatcher::runTask(const char* taskName) {
 	      	cout << "[" << taskName << "] Receiving data from " << tableList->get_dim1( tableNum ) << "..." << endl;
 
 	      	if (!isActive()) dumper->mustBreak = true;
-	      	acMultiDim* tableStructure = dumper -> getStructure( tableList->get_dim1( tableNum ) );
+	      	acMultiDim* tableStructure = dumper -> getStructure( tableList->get_dim1( tableNum ).c_str() );
 	      	if (tableStructure == 0) {
 	      		cout << "\tError reading structure." << endl;
 	      		continue;
@@ -135,6 +135,7 @@ void acWatcher::runTask(const char* taskName) {
 	} else cout << "[" << taskName << "] Compression skipped." << endl;
 
 	cout.close();
+	//delete taskName;
 }
 
 #endif

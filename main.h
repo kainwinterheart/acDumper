@@ -81,11 +81,11 @@ inline void sleep(int seconds) {
 
 class acDumper {
 public:
-    acDumper(std::string);
+    acDumper(const char*);
     ~acDumper();
 
     acMultiDim* getTables ();
-    acMultiDim* getStructure (std::string);
+    acMultiDim* getStructure (const char*);
     int saveData (std::string, std::string, std::string);
 
     std::string getSaveDir();

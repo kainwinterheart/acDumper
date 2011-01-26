@@ -203,7 +203,7 @@ string acDumper::getSaveDir() {
 	return saveDir;
 }
 
-acDumper::acDumper(string _taskName) {
+acDumper::acDumper(const char* _taskName) {
 	isConnected = false;
 	mustBreak = false;
 	taskName = ToString( _taskName );
@@ -219,7 +219,6 @@ acDumper::acDumper(string _taskName) {
     task_outdir		= NULL;
 
     startTime = time( NULL );
-
     acConfig = new Config();
 
     if ( fileExists( CONFIG ) ) {
@@ -267,7 +266,10 @@ acMultiDim* acDumper::getTables() {
     return tableList;
 }
 
-acMultiDim* acDumper::getStructure(string tableName) {
+acMultiDim* acDumper::getStructure(const char* _tableName) {
+	string tableName = ToString(_tableName);
+	//delete[] _tableName;
+
 	MYSQL_RES* res = query( "show create table " + tableName + ";" );
 	if (res == NULL) return 0;
 	MYSQL_ROW* row = new MYSQL_ROW;
@@ -281,7 +283,11 @@ acMultiDim* acDumper::getStructure(string tableName) {
     	}
     }
 
+    mysql_free_result(res);
+
     res = query( "describe " + tableName + ";" );
+    if (res == NULL) return 0;
+
     if ( mysql_num_rows( res ) > 0 ) {
     	while( ( *row = mysql_fetch_row( res ) ) != NULL ) {
     		if (mustBreak) break;
@@ -397,7 +403,7 @@ bool acDumper::connect() {
 	if (!mysql_real_connect(conn, task_host, task_user, task_pass, task_db, task_port, NULL, 0)) {
 		return false;
 	} else {
-		query("set names '" + ToString(task_encoding) + "';");
+		mysql_free_result(query("set names '" + ToString(task_encoding) + "';"));
 	}
 
 	return true;
@@ -414,6 +420,8 @@ void acDumper::loadConfig(const char* _taskName) {
 	if (IsNull(task_encoding))	task_encoding	= acConfig->getStringValue("encoding");
 	if (IsNull(task_alias)) 	task_alias	  	= acConfig->getStringValue("alias");
 	if (IsNull(task_outdir)) 	task_outdir	  	= acConfig->getStringValue("outdir");
+
+	//delete _taskName;
 }
 
 void acDumper::disconnect() {
