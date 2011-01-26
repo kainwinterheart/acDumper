@@ -35,7 +35,7 @@ acMultiDim* acWatcher::lookForJob() {
 		delete dumper;
 		lfjActive = false;
 		return jobList;
-	} else return NULL;
+	} else return (new acMultiDim);
 }
 
 bool acWatcher::isActive() {

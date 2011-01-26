@@ -41,12 +41,28 @@ acMultiDim* acDumper::lookForJob() {
 }
 
 bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
+	RE_Options *reopt = new RE_Options;
+	reopt->set_caseless(false);
+	reopt->set_utf8(true);
+
+	string tempJobTime = jobTime;
+	RE *re1 = new RE (
+			"(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
+			(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
+			(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
+			(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
+			(\\*|[A-Z][a-z][a-z])", *reopt);
+
+	re1->GlobalReplace("", &tempJobTime);
+	if (tempJobTime.empty()) jobTime = tempJobTime;
+
 	vector<string> dateBits = split(jobTime, ' ');
 	if (dateBits.size() != 5) return false;
 
 	// Switching to false will force function to always return false
 	bool result = true;
 
+	/* Well, actually I don't remember what I've tried to do in these lines of code...*/
 	time_t uepoch;
 	struct tm tmepoch;
 	memset(&tmepoch,0,sizeof tmepoch);
@@ -58,6 +74,8 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 	tmepoch.tm_sec = 0;
 	uepoch = mktime(&tmepoch);
 	uepoch = (time_t)startTime - uepoch;
+	/* ********************************* */
+
 	tm * hrTime = gmtime ( &uepoch );
 
 	const char* dows[7] = {"Sun\0", "Mon\0", "Tue\0", "Wed\0", "Thu\0", "Fri\0", "Sat\0"};
@@ -118,18 +136,18 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 	if (dow == "*") approved[4] = true;
 	else if (dow == dows[hrTime->tm_wday]) approved[4] = true;
 
+	// If passed enough time - approving bits that has been tested
 	if (timePassed > testTime)
 		for (int i = 0; i < 4; i++)
 			if (isInTestTime[i]) approved[i] = true;
 
+	// Getting final approval
 	for (int i = 0; i < 5; i++) {
 		if (result) result = approved[i];
-		//cout << i << ": " << (result ? "true" : "false") << endl;
 		if (!result) break;
 	}
 
-	//cout << "result: " << (result ? "execute now" : "skip") << endl;
-	return result; // false;
+	return result;
 }
 
 string acDumper::getSaveDir() {
@@ -228,6 +246,11 @@ acDumper::~acDumper() {
 }
 
 acMultiDim* acDumper::getTables() {
+	string filename = getSaveDir() + taskName + ".sql";
+	ofstream datafile( filename.c_str(), ios::trunc );
+	datafile << "SET NAMES '" + ToString(task_encoding) + "';" << endl;
+	datafile.close();
+
     MYSQL_RES* res = query( "show tables;" );
     if (res == NULL) return 0;
     MYSQL_ROW* row = new MYSQL_ROW;
@@ -299,8 +322,8 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 
 	acMultiDim* tableData = new acMultiDim;
 
-	string filename = getSaveDir() + tableName + ".sql";
-	ofstream datafile( filename.c_str(), ios::trunc );
+	string filename = getSaveDir() + taskName + ".sql";
+	ofstream datafile( filename.c_str(), ios::app );
 
 	datafile << "DROP TABLE IF EXISTS " << tableName << ";" << endl;
 	datafile << tableStructure << endl;
@@ -407,27 +430,31 @@ int acDumper::getStartTime() {
 void* scannerThread(void* pointer) {
 	while (watcher->isActive()) {
 
+		try {
 		#if USE_MUTEX
 			pthread_mutex_lock(&(watcher->mutex));
 		#endif
 
-		acMultiDim* jobList = watcher->lookForJob();
+		// acMultiDim* jobList = watcher->lookForJob();
+		acMultiDim jobList = *(watcher->lookForJob());
 
 		#if USE_MUTEX
 			pthread_mutex_unlock(&(watcher->mutex));
 		#endif
 
-		if (jobList != NULL)
-			if (jobList->getSize_dim1() > -1)
-				for (int i = 0; i <= jobList->getSize_dim1(); i++)
+		//if (jobList != NULL)
+			if (jobList.getSize_dim1() > -1)
+				for (int i = 0; i <= jobList.getSize_dim1(); i++)
 					if (watcher->isActive()) {
 						//pthread_join( threadSetup( jobList->get_dim1(i).c_str(), watcher ), NULL );
-						threadSetup( jobList->get_dim1(i).c_str(), watcher );
+						threadSetup( jobList.get_dim1(i).c_str(), watcher );
 						sleep(watcher->currentTasks);
 					}
 
 		//jobList->cleanup();
 		//delete jobList;
+		} catch (char * err) {}
+
 		for (int i = 0; i < 50; i++) {
 			sleep(1);
 			if (!watcher->isActive()) break;
