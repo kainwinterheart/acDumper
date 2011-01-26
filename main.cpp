@@ -50,17 +50,15 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 
 	string tempJobTime = jobTime;
 	RE *re1 = new RE (
-			"(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
-			(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
-			(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
-			(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) \
-			(\\*|[A-Z][a-z][a-z])", *reopt);
+			"(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[A-Z][a-z][a-z])", *reopt);
 
 	re1->GlobalReplace("", &tempJobTime);
-	if (tempJobTime.empty()) jobTime = tempJobTime;
 
+	delete re1;
+	delete reopt;
+
+	if (!tempJobTime.empty()) return false;
 	vector<string> dateBits = split(jobTime, ' ');
-	if (dateBits.size() != 5) return false;
 
 	// Switching to false will force function to always return false
 	bool result = true;
@@ -77,6 +75,7 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 	tmepoch.tm_sec = 0;
 	uepoch = mktime(&tmepoch);
 	uepoch = (time_t)startTime - uepoch;
+	memset(&tmepoch,0,sizeof tmepoch);
 	/* ********************************* */
 
 	tm * hrTime = gmtime ( &uepoch );
@@ -149,6 +148,9 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 		if (result) result = approved[i];
 		if (!result) break;
 	}
+
+	dateBits.erase(dateBits.begin());
+	vector<string>().swap(dateBits);
 
 	return result;
 }
