@@ -35,6 +35,9 @@ acMultiDim* acDumper::lookForJob() {
 			const char* status = acConfig->getStringValue("status");
 			if ( ToString( status ) != ToString( JOB_STATUS_ACTIVE ) )
 				if ( isItNow( ToString( jobTime ), atoi( status ) ) ) jobList->push_dim1( ToString(section) );
+			delete jobTime;
+			delete status;
+			delete section;
 		}
 	}
 	return jobList;
@@ -228,6 +231,13 @@ acDumper::acDumper(const char* _taskName) {
         	isConnected = connect();
         }
     }
+}
+
+acDumper::acDumper() {
+	isConnected = false;
+	mustBreak = false;
+    acConfig = new Config();
+    if ( fileExists( CONFIG ) ) acConfig->load( CONFIG );
 }
 
 acDumper::~acDumper() {

@@ -124,6 +124,9 @@ void acWatcher::runTask(const char* taskName) {
 		FILE* sqlFile = fopen(ToString(outName + ".sql").c_str(), "r");
 		FILE* zlbFile = fopen(ToString(outName + ".zlb").c_str(), "w");
 
+		SET_BINARY_MODE(sqlFile);
+		SET_BINARY_MODE(zlbFile);
+
 		cout << "[" << taskName << "] Compressing..." << endl;
 		int startTime = time( NULL );
 		zlibber->pack(sqlFile, zlbFile, 9);

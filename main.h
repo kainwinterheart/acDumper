@@ -82,6 +82,7 @@ inline void sleep(int seconds) {
 class acDumper {
 public:
     acDumper(const char*);
+    acDumper();
     ~acDumper();
 
     acMultiDim* getTables ();
