@@ -50,7 +50,12 @@ inline void* threadRun(void* pointer) {
 	#endif
 }
 
-inline pthread_t threadSetup(const char* taskName, acWatcher* watcher) {
+inline pthread_t threadSetup(const char* _taskName, acWatcher* watcher) {
+	const size_t len = strlen(_taskName);
+	char * taskName = new char[len + 1];
+	strncpy(taskName, _taskName, len);
+	taskName[len] = '\0';
+
 	threadArgs* INFO = new threadArgs;
 	INFO->pWatcher = watcher;
 	INFO->taskName = taskName;

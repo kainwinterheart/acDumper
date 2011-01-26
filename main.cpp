@@ -428,35 +428,36 @@ int acDumper::getStartTime() {
 void* scannerThread(void* pointer) {
 	while (watcher->isActive()) {
 
-		try {
+		//try {
 		#if USE_MUTEX
 			pthread_mutex_lock(&(watcher->mutex));
 		#endif
 
-		// acMultiDim* jobList = watcher->lookForJob();
-		acMultiDim jobList = *(watcher->lookForJob());
+		acMultiDim* jobList = watcher->lookForJob();
 
 		#if USE_MUTEX
 			pthread_mutex_unlock(&(watcher->mutex));
 		#endif
 
-		//if (jobList != NULL)
-			if (jobList.getSize_dim1() > -1)
-				for (int i = 0; i <= jobList.getSize_dim1(); i++)
+		if (jobList != NULL)
+			if (jobList->getSize_dim1() > -1)
+				for (int i = 0; i <= jobList->getSize_dim1(); i++)
 					if (watcher->isActive()) {
 						//pthread_join( threadSetup( jobList->get_dim1(i).c_str(), watcher ), NULL );
-						threadSetup( jobList.get_dim1(i).c_str(), watcher );
+						threadSetup( jobList->get_dim1(i).c_str(), watcher );
 						sleep(watcher->currentTasks);
 					}
 
 		//jobList->cleanup();
-		//delete jobList;
-		} catch (char * err) {}
+		//
+		//} catch (char * err) {}
 
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 40; i++) {
 			sleep(1);
 			if (!watcher->isActive()) break;
 		}
+
+		delete jobList;
 	}
 	pthread_exit(NULL);
 
