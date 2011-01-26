@@ -1,3 +1,7 @@
+/*
+ Source: http://www.zlib.net/zpipe.c
+*/
+
 #ifndef ZLIBBER_CPP
 #define ZLIBBER_CPP
 
