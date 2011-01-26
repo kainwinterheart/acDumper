@@ -59,6 +59,14 @@ inline int indexOf(const char* where, const char* what) {
 	return pos;
 }
 
+inline bool fileExists(const char* fileName) {
+    std::ifstream ifile( fileName );
+    if ( ifile.is_open() ) {
+        ifile.close();
+        return true;
+    } else return false;
+}
+
 /*inline unsigned int daysInMonth(unsigned int month, unsigned int year) {
     return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0))) && (month == 2)));
 }*/

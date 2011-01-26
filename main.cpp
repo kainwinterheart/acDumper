@@ -221,10 +221,8 @@ acDumper::acDumper(string _taskName) {
     startTime = time( NULL );
 
     acConfig = new Config();
-    ifstream ifile( CONFIG );
 
-    if ( ifile.is_open() ) {
-        ifile.close();
+    if ( fileExists( CONFIG ) ) {
         acConfig->load( CONFIG );
         if (!taskName.empty()) {
         	conn = new MYSQL;

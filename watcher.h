@@ -2,6 +2,7 @@
 #define ACWATCHER_H
 
 #include <pthread.h>
+#include "zlibber.h"
 
 class acWatcher {
 public:
@@ -25,6 +26,8 @@ public:
     #if USE_MUTEX
     	pthread_mutex_t mutex;
 	#endif
+
+    acZlibber* zlibber;
 
 private:
     void runTask(const char*);

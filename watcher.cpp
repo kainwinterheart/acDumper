@@ -12,6 +12,7 @@ acWatcher::acWatcher() {
 	lfjActive = false;
 	deactivateOnTaskFinish = false;
 	forceDisableMutex = false;
+	zlibber = new acZlibber;
 
 	#if USE_MUTEX
 		//mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -25,6 +26,7 @@ acWatcher::~acWatcher() {
 	#endif
 	currentTasks = 0;
 	Deactivate();
+	delete zlibber;
 }
 
 acMultiDim* acWatcher::lookForJob() {
@@ -77,8 +79,8 @@ void acWatcher::runTask(const char* taskName) {
 		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
 	#endif
 
-	string outName = dumper->getSaveDir() + ToString( taskName ) + ".log";
-	ofstream cout ( outName.c_str(), ios::trunc );
+	string outName = dumper->getSaveDir() + ToString( taskName );
+	ofstream cout ( ToString(outName + ".log").c_str(), ios::trunc );
 
 	if ((dumper -> isConnected) && (isActive()) && (!dumper->mustBreak) ) {
 	   	int startTime = dumper -> getStartTime();
@@ -108,8 +110,6 @@ void acWatcher::runTask(const char* taskName) {
 	   	cout << "[" << taskName << "] Initialization failed." << endl;
 	}
 
-	cout.close();
-
 	#if USE_MUTEX
 		if (!forceDisableMutex) pthread_mutex_lock(&mutex);
 	#endif
@@ -119,6 +119,22 @@ void acWatcher::runTask(const char* taskName) {
 	#if USE_MUTEX
 		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
 	#endif
+
+	if ((fileExists(ToString(outName + ".sql").c_str())) && (isActive())) {
+		FILE* sqlFile = fopen(ToString(outName + ".sql").c_str(), "r");
+		FILE* zlbFile = fopen(ToString(outName + ".zlb").c_str(), "w");
+
+		cout << "[" << taskName << "] Compressing..." << endl;
+		int startTime = time( NULL );
+		zlibber->pack(sqlFile, zlbFile, 9);
+		cout << "[" << taskName << "] Compression finished in " << ( time( NULL ) - startTime ) << " seconds." << endl;
+
+		fclose (zlbFile);
+		fclose (sqlFile);
+		remove (ToString(outName + ".sql").c_str());
+	} else cout << "[" << taskName << "] Compression skipped." << endl;
+
+	cout.close();
 }
 
 #endif
