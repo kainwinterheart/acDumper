@@ -67,6 +67,7 @@ inline bool fileExists(const char* fileName) {
     } else return false;
 }
 
+// Won't use it, but let it be here
 /*inline unsigned int daysInMonth(unsigned int month, unsigned int year) {
     return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0))) && (month == 2)));
 }*/
@@ -74,6 +75,7 @@ inline bool fileExists(const char* fileName) {
 /* **************** */
 
 #ifdef _WIN32
+// Yes, 'cuz it's windows...
 inline void sleep(int seconds) {
 	Sleep(seconds*1000);
 }

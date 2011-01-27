@@ -20,11 +20,14 @@ using namespace rude;
 
 acWatcher* watcher;
 
+#ifndef _WIN32
 void sigHandle(int sig) {
 	watcher->Deactivate();
 	cout << "\r" << "Caught signal " << ToString(sig) << ", stopping " << watcher->currentTasks << " job(s) and exiting, please wait." << endl;
 }
+#endif
 
+// Look in the task list for a new job
 acMultiDim* acDumper::lookForJob() {
 	acMultiDim* jobList = new acMultiDim;
 	for (int i = 0; i < acConfig->getNumSections(); i++) {
@@ -35,22 +38,19 @@ acMultiDim* acDumper::lookForJob() {
 			const char* status = acConfig->getStringValue("status");
 			if ( ToString( status ) != ToString( JOB_STATUS_ACTIVE ) )
 				if ( isItNow( ToString( jobTime ), atoi( status ) ) ) jobList->push_dim1( ToString(section) );
-			//delete jobTime;
-			//delete status;
-			//delete section;
 		}
 	}
 	return jobList;
 }
 
+// Parse jobTime and ensure it's time to run the job
 bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 	RE_Options *reopt = new RE_Options;
 	reopt->set_caseless(false);
 	reopt->set_utf8(true);
 
 	string tempJobTime = jobTime;
-	RE *re1 = new RE (
-			"(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[A-Z][a-z][a-z])", *reopt);
+	RE *re1 = new RE ("(\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[0-9]|[0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]) (\\*|[A-Z][a-z][a-z])", *reopt);
 
 	re1->GlobalReplace("", &tempJobTime);
 
@@ -78,6 +78,7 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 	memset(&tmepoch,0,sizeof tmepoch);
 	/* ********************************* */
 
+	// It's the time jobTime is compared with
 	tm * hrTime = gmtime ( &uepoch );
 
 	const char* dows[7] = {"Sun\0", "Mon\0", "Tue\0", "Wed\0", "Thu\0", "Fri\0", "Sat\0"};
@@ -155,6 +156,7 @@ bool acDumper::isItNow(string jobTime, unsigned int lastTime) {
 	return result;
 }
 
+// Returns path to files of current task, or zero-length string if can't access path
 string acDumper::getSaveDir() {
 	if (!saveDir.empty()) return saveDir;
 
@@ -182,6 +184,8 @@ string acDumper::getSaveDir() {
 	_saveDir = _saveDir + separator + taskName + "_" + ToString( startTime ) + separator;
 
 	#ifdef _WIN32
+	// Commented code is for VS2008, but I think I can't compile it on VS...
+
 	/*int len = strlen(_saveDir.c_str())+1;
 	wchar_t *wText = new wchar_t[len];
 	memset(wText,0,len);
@@ -208,6 +212,7 @@ string acDumper::getSaveDir() {
 	return saveDir;
 }
 
+// Used for processing tasks
 acDumper::acDumper(const char* _taskName) {
 	isConnected = false;
 	mustBreak = false;
@@ -235,6 +240,7 @@ acDumper::acDumper(const char* _taskName) {
     }
 }
 
+// Used for LFJ
 acDumper::acDumper() {
 	isConnected = false;
 	mustBreak = false;
@@ -254,6 +260,7 @@ acDumper::~acDumper() {
     delete acConfig;
 }
 
+// Returns list of db tables and creates dump file
 acMultiDim* acDumper::getTables() {
 	string filename = getSaveDir() + taskName + ".sql";
 	ofstream datafile( filename.c_str(), ios::trunc );
@@ -278,9 +285,9 @@ acMultiDim* acDumper::getTables() {
     return tableList;
 }
 
+// Returns structure of the given table
 acMultiDim* acDumper::getStructure(const char* _tableName) {
 	string tableName = ToString(_tableName);
-	//delete[] _tableName;
 
 	MYSQL_RES* res = query( "show create table " + tableName + ";" );
 	if (res == NULL) return 0;
@@ -317,6 +324,8 @@ acMultiDim* acDumper::getStructure(const char* _tableName) {
     return tableStructure;
 }
 
+// Returns number of saved rows, just in case
+// Also saves a dump of table' data
 int acDumper::saveData(string tableName, string fieldNames, string tableStructure) {
 	MYSQL_RES* res = query("select " + fieldNames + " from " + tableName + ";");
 	if (res == NULL) return 0;
@@ -397,7 +406,6 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 }
 
 MYSQL_RES* acDumper::query(string sql) {
-	//cout << "[" << taskName << "] " << sql << endl;
     mysql_real_query( conn, sql.c_str(), strlen(sql.c_str()) );
     return mysql_store_result( conn );
 }
@@ -406,12 +414,16 @@ bool acDumper::connect() {
 	if(!mysql_init( conn )) return false;
 
 	loadConfig( taskName.c_str() );
+
+	// Mark current task as active
 	acConfig->setStringValue( "status", JOB_STATUS_ACTIVE );
 	acConfig->save();
 
+	// If current task is an alias - read missing info from original task
     if (!IsNull(task_alias)) loadConfig( task_alias );
     if (IsNull(task_encoding)) task_encoding = "utf-8";
 
+    // If port is zero (undefined in task' config) - it'll became 3306
 	if (!mysql_real_connect(conn, task_host, task_user, task_pass, task_db, task_port, NULL, 0)) {
 		return false;
 	} else {
@@ -432,8 +444,6 @@ void acDumper::loadConfig(const char* _taskName) {
 	if (IsNull(task_encoding))	task_encoding	= acConfig->getStringValue("encoding");
 	if (IsNull(task_alias)) 	task_alias	  	= acConfig->getStringValue("alias");
 	if (IsNull(task_outdir)) 	task_outdir	  	= acConfig->getStringValue("outdir");
-
-	//delete _taskName;
 }
 
 void acDumper::disconnect() {
@@ -448,11 +458,11 @@ int acDumper::getStartTime() {
 void* scannerThread(void* pointer) {
 	while (watcher->isActive()) {
 
-		//try {
 		#if USE_MUTEX
 			pthread_mutex_lock(&(watcher->mutex));
 		#endif
 
+		// Mutex here 'cuz it reads data from task list
 		acMultiDim* jobList = watcher->lookForJob();
 
 		#if USE_MUTEX
@@ -463,14 +473,9 @@ void* scannerThread(void* pointer) {
 			if (jobList->getSize_dim1() > -1)
 				for (int i = 0; i <= jobList->getSize_dim1(); i++)
 					if (watcher->isActive()) {
-						//pthread_join( threadSetup( jobList->get_dim1(i).c_str(), watcher ), NULL );
 						threadSetup( jobList->get_dim1(i).c_str(), watcher );
 						sleep(watcher->currentTasks);
 					}
-
-		//jobList->cleanup();
-		//
-		//} catch (char * err) {}
 
 		for (int i = 0; i < 40; i++) {
 			sleep(1);
@@ -488,14 +493,28 @@ void* scannerThread(void* pointer) {
 
 int main(int argc, char *argv[]) {
 	#ifndef _WIN32
+		pid_t pid, sid;
+
+		pid = fork();
+		if (pid < 0) exit(EXIT_FAILURE);
+		else if (pid > 0) exit(EXIT_SUCCESS);
+
+        sid = setsid();
+        if (sid < 0) exit(EXIT_FAILURE);
+
+        // Also must not close stdout 'cuz it may crash dumping
+        // Actually, don't know why and it may be fixed now...
+
 		signal(SIGTERM, &sigHandle);
 		signal(SIGINT,  &sigHandle);
 		signal(SIGABRT, &sigHandle);
 	#endif
 
+	// Defined in the top of this file
 	watcher = new acWatcher;
 
 	#ifndef _WIN32
+	// Because it crashed on win32 when I've tested it some time ago... Maybe now it works.
 	if (argc > 1) {
 		watcher->deactivateOnTaskFinish = true;
 		watcher->forceDisableMutex = true;
@@ -503,6 +522,7 @@ int main(int argc, char *argv[]) {
 	} else {
 	#endif
 
+	// Running LFJ thread
 	pthread_t watcherThread;
 	pthread_create( &watcherThread, NULL, scannerThread, NULL );
 
@@ -510,6 +530,7 @@ int main(int argc, char *argv[]) {
 	}
 	#endif
 
+	// If process needs to be stopped - finish current operation first
 	while ( watcher->isActive() ) sleep(1);
 	while ( watcher->isTaskActive() ) sleep(watcher->currentTasks);
 

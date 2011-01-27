@@ -15,7 +15,6 @@ acWatcher::acWatcher() {
 	zlibber = new acZlibber;
 
 	#if USE_MUTEX
-		//mutex = PTHREAD_MUTEX_INITIALIZER;
 		pthread_mutex_init(&mutex, NULL);
 	#endif
 }
@@ -32,7 +31,7 @@ acWatcher::~acWatcher() {
 acMultiDim* acWatcher::lookForJob() {
 	if ((isActive()) && (!isLFJActive())) {
 		lfjActive = true;
-		acDumper* dumper = new acDumper( "" );
+		acDumper* dumper = new acDumper();
 		acMultiDim* jobList = dumper->lookForJob();
 		delete dumper;
 		lfjActive = false;
@@ -40,6 +39,7 @@ acMultiDim* acWatcher::lookForJob() {
 	} else return (new acMultiDim);
 }
 
+/* Because it's cool xD */
 bool acWatcher::isActive() {
 	return active;
 }
@@ -59,20 +59,21 @@ void acWatcher::Activate() {
 void acWatcher::Deactivate() {
 	active = false;
 }
+/* ******************** */
 
 void acWatcher::startTask(const char* taskName) {
-	if ( ( !IsNull( taskName ) ) && (!isLFJActive()) ) {
-		runTask( taskName );
-	}
+	//if ( ( !IsNull( taskName ) ) && (!isLFJActive()) ) {
+
+	// Well, it's already mutexed...
+	if ( !IsNull( taskName ) ) runTask( taskName );
 }
 
 void acWatcher::runTask(const char* taskName) {
-	// sleep(currentTasks);
-
 	#if USE_MUTEX
 		if (!forceDisableMutex) pthread_mutex_lock(&mutex);
 	#endif
 
+	// Task list file manipulations...
 	acDumper* dumper = new acDumper( taskName );
 
 	#if USE_MUTEX
@@ -80,6 +81,8 @@ void acWatcher::runTask(const char* taskName) {
 	#endif
 
 	string outName = dumper->getSaveDir() + ToString( taskName );
+
+	// Think I can't close stdout because of this line
 	ofstream cout ( ToString(outName + ".log").c_str(), ios::trunc );
 
 	if ((dumper -> isConnected) && (isActive()) && (!dumper->mustBreak) ) {
@@ -114,16 +117,20 @@ void acWatcher::runTask(const char* taskName) {
 		if (!forceDisableMutex) pthread_mutex_lock(&mutex);
 	#endif
 
+	// Also task list file manipulations.
 	delete dumper;
 
 	#if USE_MUTEX
 		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
 	#endif
 
+	// Yeah, it's scary, but I had errors with pointers here and was sleepy...again
+	// Also compression begins AFTER job is marked as completed
 	if ((fileExists(ToString(outName + ".sql").c_str())) && (isActive())) {
 		FILE* sqlFile = fopen(ToString(outName + ".sql").c_str(), "r");
 		FILE* zlbFile = fopen(ToString(outName + ".zlb").c_str(), "w");
 
+		// Fix for win32, but let it be without #ifdef
 		SET_BINARY_MODE(sqlFile);
 		SET_BINARY_MODE(zlbFile);
 
@@ -138,7 +145,6 @@ void acWatcher::runTask(const char* taskName) {
 	} else cout << "[" << taskName << "] Compression skipped." << endl;
 
 	cout.close();
-	//delete taskName;
 }
 
 #endif
