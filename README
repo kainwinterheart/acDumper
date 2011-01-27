@@ -1,1 +1,197 @@
+== COPYRIGHT ==
 
+Copyright (C) 2011  Kain Winterheart <http://facebook.com/kain.winterheart>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+== WHAT'S IN ==
+
+acDumper is an open-source MySQL dumper software.
+It's written both for Linux and Windows(R) and must be free.
+
+acDumper uses:
+    mysqlclient / mysql libraries for accessing database
+    rudeconfig library for reading/writing configuration files
+    pcrecpp for things regexps is used for
+    zlib for compressing dump files
+    pthread SUDDENLY for threading ^^
+and of cource to compile it you need developer version of these libraries.
+
+In "win32" directory you can find headers and libs you need to compile
+acDumper on Windows(R) and in "win32-binaries" are dlls you need to run
+the program.
+
+In "workspaces" you can find workspace setting for Eclipse(R) both
+for Linux and Windows(R).
+
+Each backup made by acDumper will be packed in .zlb archive. If you
+have no software to use .zlb files - you can download acZLibTool and
+use it for unpacking dump files. acZLibTool is free tool and can be 
+found here: <https://github.com/kainwinterheart/acZLibTool>
+
+Also if you're on Windows(R) - you may want to use an acDumperAgent
+to track which tasks is running now, see if your "jobtime" settings
+are written properly and of course start/stop acDumper. acDumperAgent
+is also a free tool, it requires Microsoft(R) .Net(R)Framework(R) 3.5(R).
+You can get acDumperAgent here:
+<https://github.com/kainwinterheart/acDumperAgent>
+
+
+== PROGRAM CONFIGURATION ==
+
+acDumper uses two config files: acDumper.conf and acDumperTasks.conf
+Examples of these files can be found here with .dist file extension,
+you must fill both of this files with proper info.
+
+acDumper.conf:
+    This file is used for storing acDumper settings. There's three
+    sections: main, linux and win32. Next I'll describe availible options:
+
+    [main] -		 Must be filled both on Linux and Windows(R).
+
+	maxThreads -	 maximum tasks that can be runned simultaneously.
+			 You can use 0 for unlimited, but don't forget that
+			 1000 tasks started in the same minute can ruin
+			 your PC.
+
+	logFile -	 path to program log file; optional: if it's not
+			 defined - there will be no logging. Also used only
+			 in daemon mode for Linux and everytime on Windows(R).
+
+
+    [linux] -		 Only if you running acDumper on Linux.
+
+	daemonize -	 if 1 - acDumper will be daemon, if 0 - it'll be
+			 just console app. If not specified - acDumper
+			 will run as daemon.
+
+    [win32] -		 Well, yeah, only for Windows(R).
+
+	connectionFile - path to file that will be used by acDumperAgent
+			 for sending commands to acDumper. If it's not
+			 defined - no connection file will be created and
+			 acDumperAgent can't kill acDumper. If you don't
+			 using acDumperAgent - feel free to erase this
+			 option.
+
+acDumperTasks.conf:
+    This file used for storing information about acDumper' tasks. If you'll
+    set a wrong value to any field in task' setting - it just won't be
+    executed. Each task has following options:
+
+    username -	database username; necessary option.
+
+    password -	database password; necessary option.
+
+    server -	database server address; necessary option.
+
+    database -	database name; necessary option.
+
+    port -	database port; optional: if not specified or 0 - will be
+		used standard MySQL port which is 3306.
+
+    outdir -	path for storing dumps; necessary option and better not to
+		be a relative path.
+
+    encoding -	value that will be passed to "SET NAMES '<encoding>'" query.
+		If not defined - will be used "utf-8", if defined incorrectly -
+		you will got garbage in your dumps or just segfaults/access
+		violations. Choose wisely!
+
+    jobtime -	time for job execution; necessary option. Scheduling must be
+		written in cronjob format. Actually, it's kinda "simplified cron"
+		here: it's also five bits, but availible values slightly differs.
+		Let's see, we have five-bits jobtime format: * * * * *
+		Describing each bit (star) in jobtime from left to right you'll
+		get:
+		    minutes
+		    hours
+		    days (or days of month)
+		    months
+		    days of week
+		Let's take a closer look on each field.
+		    minutes (first star, first from the left):
+			if it's just a * (star symbol) - it signalises acDumper
+			that this task must be runned every minute (well, it rescans
+			task list file every minute so if you'll have a jobtime
+			"* * * * *" - it will be executed every minute). If you
+			specified a value (i.e. "7 * * * *") - such task will be
+			executed every 07 minute of every hour of every day of
+			every month (0:07, next 1:07, next 2:07 and so on). If
+			you want an interval - you must specify a minute value to
+			look like "*/13 * * * *" - this line means that such task
+			will be executed every 13 minutes (i.e. if acDumper has
+			been launched at 5:27 - first launch of this task will be
+			immediately after launch (in 5:27), next run of such task
+			will be in 5:27 + 0:13 = 5:40, next in 5:53 and so on).
+
+		    hours (second star from the left):
+			works like a minutes' star (look above), but there's only
+			one difference: if you'll specify hours like just * (star
+			symbol) - hours value will be ignored at all. How it works:
+			jobtime like "* 2 * * *" will be executed every minute if
+			it's 2 o'clock (i.e. 2:00, 2:01, 2:03, ...). If it's
+			"5 7 * * *" - task will be executed once a day in 7:05. If
+			it's "* */12 * * *" - task will be executed every 12 hours,
+			and if it's "*/17 */3 * * *" so such task will be executed
+			every 3 hours and 17 minutes (or (3*60)+17 = every 197
+			minutes). Also "*/9 7 * * *" will execute our task every
+			nine minutes in seven o'clock.
+			
+		    days (or days of month) (third from the left and middle star):
+			works just like a hours. Note that "* * 21 * *" means
+			"each 21th of the month", but "* * */21 * *" means "every
+			21 days = every (21*24) hours = every (21*24*60) minutes".
+
+		    months (fourth star from the left):
+			work exactly like days, just note that it's months. :)
+
+		    days of week (last star, fifth from the left and first from the 
+		    right):
+			Can be * (star symbol) or can be a three-letter abbreviation
+			of the weekday. Availible values:
+			    Mon - run task only if it's monday
+			    Tue - only on tuesdays
+			    Wed - only on wednesdays
+			    Thu - thursdays
+			    Fri - fridays
+			    Sat - saturdays
+			    Sun - and only on sundays
+			    *	- just ignore this field
+			I.e. "30 3 * */1 Wed" - run task every month on 3:30 of each
+			wednesday. This value is case-sensitive, so if it's like in
+			example ("30 3 * */1 Wed") - this task will be executed
+			normally, but task with jobtime="30 3 * */1 wed" won't be
+			executed ever.
+
+    status -	this field will be added automatically by acDumper and used for
+		marking tasks as active/completed and storing time of last execution.
+		Don't mind about this field, but if you have a problem with one of
+		your tasks - try to delete "status" field of your task' settings.
+
+    alias -	used for linking tasks' settings together. In example if you have
+		a task set up with all fields filled with proper values and then
+		you need to dump another database from same server and with same
+		credentials - you can add a new task just with a different name,
+		"database" and "jobtime" fields and an "alias" field pointing to
+		name of the task that has been set up previously.
+
+
+== POSTSCRIPTUM ==
+
+In (R) we trust. AMIRITE?
+
+
+== END ==

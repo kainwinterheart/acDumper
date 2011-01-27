@@ -1,3 +1,20 @@
+/*
+Copyright (C) 2011  Kain Winterheart <http://facebook.com/kain.winterheart>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef ACDUMPER_CPP
 #define ACDUMPER_CPP
 
@@ -23,7 +40,7 @@ acWatcher* watcher;
 #ifndef _WIN32
 void sigHandle(int sig) {
 	watcher->Deactivate();
-	cout << "\r" << "Caught signal " << ToString(sig) << ", stopping " << watcher->currentTasks << " job(s) and exiting, please wait." << endl;
+	watcher->log("Caught signal " + ToString(sig) + ", stopping " + ToString(watcher->currentTasks) + " job(s) and exiting, please wait.");
 }
 #endif
 
@@ -231,21 +248,24 @@ acDumper::acDumper(const char* _taskName) {
     startTime = time( NULL );
     acConfig = new Config();
 
-    if ( fileExists( CONFIG ) ) {
-        acConfig->load( CONFIG );
+    if ( fileExists( watcher->getTaskListFile() ) ) {
+        acConfig->load( watcher->getTaskListFile() );
         if (!taskName.empty()) {
         	conn = new MYSQL;
         	isConnected = connect();
         }
     }
+    watcher->log("Dumper for task \"" + initialTaskName + "\" initialized.");
 }
 
 // Used for LFJ
 acDumper::acDumper() {
 	isConnected = false;
-	mustBreak = false;
+	taskName = "";
+	initialTaskName = taskName;
+	startTime = time( NULL );
     acConfig = new Config();
-    if ( fileExists( CONFIG ) ) acConfig->load( CONFIG );
+    if ( fileExists( watcher->getTaskListFile() ) ) acConfig->load( watcher->getTaskListFile() );
 }
 
 acDumper::~acDumper() {
@@ -254,6 +274,7 @@ acDumper::~acDumper() {
 		acConfig->setSection( initialTaskName.c_str() );
 		acConfig->setStringValue( "status", ToString( time(NULL) ).c_str() );
 		acConfig->save();
+	    watcher->log("Dumper for task \"" + initialTaskName + "\" uninitialized.");
 	}
 	mustBreak = true;
     disconnect();
@@ -352,12 +373,15 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 
 	datafile << "DROP TABLE IF EXISTS " << tableName << ";" << endl;
 	datafile << tableStructure << endl;
+	watcher->log("Dumping table " + tableName + "...");
 
 	if( rowCount > 0 ) {
 		while( ( *row = mysql_fetch_row( res ) ) != NULL ) {
 			if (mustBreak) break;
-			//status = ToString( caret+1 ) + "/" + ToString( rowCount );
-			//cout << status << "\r";
+			if (watcher->conf_BeDaemon == 0) {
+				status = ToString( caret+1 ) + "/" + ToString( rowCount );
+				cout << status << "\r";
+			}
 
 			for (unsigned int i = 0; i < mysql_num_fields( res ); i++) {
 				if (mustBreak) break;
@@ -388,7 +412,7 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 			caret++;
 			if (mustBreak) break;
 		}
-		//cout << endl;
+		if (watcher->conf_BeDaemon == 0) cout << endl;
 	}
 
 	datafile.close();
@@ -411,6 +435,7 @@ MYSQL_RES* acDumper::query(string sql) {
 }
 
 bool acDumper::connect() {
+	if(taskName.empty()) return false;
 	if(!mysql_init( conn )) return false;
 
 	loadConfig( taskName.c_str() );
@@ -425,9 +450,11 @@ bool acDumper::connect() {
 
     // If port is zero (undefined in task' config) - it'll became 3306
 	if (!mysql_real_connect(conn, task_host, task_user, task_pass, task_db, task_port, NULL, 0)) {
+		watcher->log("DB connection for task \"" + initialTaskName + "\" failed.");
 		return false;
 	} else {
 		mysql_free_result(query("set names '" + ToString(task_encoding) + "';"));
+		watcher->log("DB connection for task \"" + initialTaskName + "\" established.");
 	}
 
 	return true;
@@ -455,6 +482,7 @@ int acDumper::getStartTime() {
 	return startTime;
 }
 
+// LFJ thread' main
 void* scannerThread(void* pointer) {
 	while (watcher->isActive()) {
 
@@ -473,17 +501,20 @@ void* scannerThread(void* pointer) {
 			if (jobList->getSize_dim1() > -1)
 				for (int i = 0; i <= jobList->getSize_dim1(); i++)
 					if (watcher->isActive()) {
+						while(watcher->isPoolFull()) sleep(watcher->currentTasks);
 						threadSetup( jobList->get_dim1(i).c_str(), watcher );
-						sleep(watcher->currentTasks);
+						if (watcher->isTaskActive()) sleep(watcher->currentTasks);
+						if (watcher->isPoolFull()) watcher->log("Thread pool is full, waiting for free slot...");
 					}
-
-		for (int i = 0; i < 40; i++) {
+		for (int i = 0; i < 60; i++) {
 			sleep(1);
 			if (!watcher->isActive()) break;
 		}
 
 		delete jobList;
 	}
+
+	watcher->log("Watcher thread is dead.");
 	pthread_exit(NULL);
 
 	#ifdef _WIN32
@@ -491,40 +522,104 @@ void* scannerThread(void* pointer) {
 	#endif
 }
 
+#ifdef _WIN32
+// win32 agent connection monitor thread
+void* connMonitor(void* pointer) {
+	struct stat buf;
+	int lastMTime = 0;
+	char* cmd = NULL;
+	FILE* connFile;
+
+	while (watcher->isActive()) {
+		if (!fileExists(watcher->conf_ConnFile)) fclose(fopen(watcher->conf_ConnFile, "w"));
+
+		if (!stat(watcher->conf_ConnFile, &buf)) {
+			if (buf.st_mtim.tv_sec > lastMTime) {
+				connFile = fopen(watcher->conf_ConnFile, "r");
+				cmd = fgets(cmd, 100, connFile);
+				fclose(connFile);
+			}
+		}
+
+		if (!IsNull(cmd)) {
+			string _cmd = ToString(cmd);
+
+			// Maybe someday I'll add some other commands...
+			if (_cmd == CMD_KILL) watcher->Deactivate();
+		}
+
+		fclose(fopen(watcher->conf_ConnFile, "w"));
+		if (!stat(watcher->conf_ConnFile, &buf)) lastMTime = buf.st_mtim.tv_sec;
+		cmd = NULL;
+		sleep(1);
+	}
+
+	watcher->log("acDumper Agent connection monitor thread is dead.");
+	pthread_exit(NULL);
+}
+#endif
+
 int main(int argc, char *argv[]) {
+	// Defined in the top of this file
+	watcher = new acWatcher;
+
 	#ifndef _WIN32
+	if (watcher->conf_BeDaemon) {
 		pid_t pid, sid;
 
 		pid = fork();
-		if (pid < 0) exit(EXIT_FAILURE);
-		else if (pid > 0) exit(EXIT_SUCCESS);
+		if (pid < 0) {
+			watcher->log("Can't fork.");
+			delete watcher;
+			exit(EXIT_FAILURE);
+		}
+		else if (pid > 0) {
+			delete watcher;
+			exit(EXIT_SUCCESS);
+		}
 
         sid = setsid();
-        if (sid < 0) exit(EXIT_FAILURE);
+        if (sid < 0) {
+        	watcher->log("Can't get SID.");
+        	delete watcher;
+        	exit(EXIT_FAILURE);
+        }
 
-        // Also must not close stdout 'cuz it may crash dumping
-        // Actually, don't know why and it may be fixed now...
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+	}
 
 		signal(SIGTERM, &sigHandle);
 		signal(SIGINT,  &sigHandle);
 		signal(SIGABRT, &sigHandle);
 	#endif
 
-	// Defined in the top of this file
-	watcher = new acWatcher;
+	watcher->log("Initialized.");
 
 	#ifndef _WIN32
 	// Because it crashed on win32 when I've tested it some time ago... Maybe now it works.
 	if (argc > 1) {
+		watcher->log("Launched for single task.");
 		watcher->deactivateOnTaskFinish = true;
 		watcher->forceDisableMutex = true;
 		threadSetup( argv[1], watcher );
 	} else {
 	#endif
 
+	#ifdef _WIN32
+	if (!IsNull(watcher->conf_ConnFile)) {
+		// Running win32 agent connection monitor thread
+		pthread_t connectionThread;
+		pthread_create( &connectionThread, NULL, connMonitor, NULL );
+		watcher->log("acDumper Agent connection monitor thread started.");
+	}
+	#endif
+
 	// Running LFJ thread
 	pthread_t watcherThread;
 	pthread_create( &watcherThread, NULL, scannerThread, NULL );
+	watcher->log("Watcher thread started.");
 
 	#ifndef _WIN32
 	}

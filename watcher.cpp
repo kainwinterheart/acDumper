@@ -1,3 +1,20 @@
+/*
+Copyright (C) 2011  Kain Winterheart <http://facebook.com/kain.winterheart>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef ACWATCHER_CPP
 #define ACWATCHER_CPP
 
@@ -5,18 +22,44 @@
 #include "threads.h"
 
 using namespace std;
+using namespace rude;
 
 acWatcher::acWatcher() {
 	Activate();
+	taskListFile = "";
 	currentTasks = 0;
 	lfjActive = false;
 	deactivateOnTaskFinish = false;
 	forceDisableMutex = false;
 	zlibber = new acZlibber;
+	acConfig = new Config();
+
+	if(fileExists(CONFIG)) {
+		acConfig->load(CONFIG);
+
+		acConfig->setSection("main");
+		conf_MaxThreads = acConfig->getIntValue("maxThreads");
+		conf_LogFile 	= acConfig->getStringValue("logFile");
+
+		#ifdef _WIN32
+			acConfig->setSection("win32");
+			conf_ConnFile = acConfig->getStringValue("connectionFile");
+			conf_BeDaemon = 1;
+		#else
+			acConfig->setSection("linux");
+			conf_BeDaemon = acConfig->getBoolValue("daemonize");
+		#endif
+	} else {
+		conf_MaxThreads = 0;
+		conf_BeDaemon = 1;
+	}
+
+	if(!IsNull(conf_LogFile)) fclose(fopen(conf_LogFile, "w"));
 
 	#if USE_MUTEX
 		pthread_mutex_init(&mutex, NULL);
 	#endif
+	log("Watcher alive.");
 }
 
 acWatcher::~acWatcher() {
@@ -25,7 +68,9 @@ acWatcher::~acWatcher() {
 	#endif
 	currentTasks = 0;
 	Deactivate();
+	delete acConfig;
 	delete zlibber;
+	log("Watcher dead.");
 }
 
 acMultiDim* acWatcher::lookForJob() {
@@ -39,6 +84,44 @@ acMultiDim* acWatcher::lookForJob() {
 	} else return (new acMultiDim);
 }
 
+void acWatcher::log(string data) {
+	if (conf_BeDaemon == 1) {
+		if (IsNull(conf_LogFile)) return;
+
+		time_t logTime = time( NULL );
+		char* timeStr = NULL;
+
+		strftime(timeStr, 100, "%d-%m-%Y %H:%M:%S", localtime( &logTime ));
+
+		ofstream logfile (conf_LogFile, ios::app );
+		logfile << timeStr << ": " << data << endl;
+		logfile.close();
+	} else {
+		puts(data.c_str());
+	}
+}
+
+const char* acWatcher::getTaskListFile() {
+	if (!taskListFile.empty()) return taskListFile.c_str();
+
+	string tempString = "";
+	#ifndef _WIN32
+		string rcFile = "~/." + ToString(TASKLIST);
+		string etcFile = "/etc/" + ToString(TASKLIST);
+
+		if (fileExists(rcFile)) tempString = rcFile;
+		else if (fileExists(etcFile)) tempString = etcFile;
+		else
+	#endif
+
+	tempString = ToString(TASKLIST);
+	taskListFile = tempString;
+
+	log("Task list file is " + tempString);
+
+	return taskListFile.c_str();
+}
+
 /* Because it's cool xD */
 bool acWatcher::isActive() {
 	return active;
@@ -50,6 +133,10 @@ bool acWatcher::isLFJActive() {
 
 bool acWatcher::isTaskActive() {
 	return (currentTasks > 0);
+}
+
+bool acWatcher::isPoolFull() {
+	return ((conf_MaxThreads > 0) ? (currentTasks >= (conf_MaxThreads-1)) : false);
 }
 
 void acWatcher::Activate() {
@@ -75,29 +162,28 @@ void acWatcher::runTask(const char* taskName) {
 
 	// Task list file manipulations...
 	acDumper* dumper = new acDumper( taskName );
+	log("Task \"" + ToString(taskName) + "\" initialized.");
 
 	#if USE_MUTEX
 		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
 	#endif
 
 	string outName = dumper->getSaveDir() + ToString( taskName );
-
-	// Think I can't close stdout because of this line
-	ofstream cout ( ToString(outName + ".log").c_str(), ios::trunc );
+	ofstream taskLog ( ToString(outName + ".log").c_str(), ios::trunc );
 
 	if ((dumper -> isConnected) && (isActive()) && (!dumper->mustBreak) ) {
 	   	int startTime = dumper -> getStartTime();
-	    cout << "[" << taskName << "] Initialized in thread " << currentTasks << "." << endl;
+	   	taskLog << "[" << taskName << "] Initialized in thread " << currentTasks << "." << endl;
 	    acMultiDim* tableList = dumper -> getTables();
 
 	    if (tableList != 0)
 	    for (int tableNum = 0; tableNum <= tableList->getSize_dim1(); ++tableNum) {
-	      	cout << "[" << taskName << "] Receiving data from " << tableList->get_dim1( tableNum ) << "..." << endl;
+	    	taskLog << "[" << taskName << "] Receiving data from " << tableList->get_dim1( tableNum ) << "..." << endl;
 
 	      	if (!isActive()) dumper->mustBreak = true;
 	      	acMultiDim* tableStructure = dumper -> getStructure( tableList->get_dim1( tableNum ).c_str() );
 	      	if (tableStructure == 0) {
-	      		cout << "\tError reading structure." << endl;
+	      		taskLog << "\tError reading structure." << endl;
 	      		continue;
 	      	}
 
@@ -108,9 +194,9 @@ void acWatcher::runTask(const char* taskName) {
 	    }
 
 	    delete tableList;
-	    cout << "[" << taskName << "] Finished in " << ( time( NULL ) - startTime ) << " seconds." << endl;
+	    taskLog << "[" << taskName << "] Finished in " << ( time( NULL ) - startTime ) << " seconds." << endl;
 	} else {
-	   	cout << "[" << taskName << "] Initialization failed." << endl;
+		taskLog << "[" << taskName << "] Initialization failed." << endl;
 	}
 
 	#if USE_MUTEX
@@ -119,6 +205,7 @@ void acWatcher::runTask(const char* taskName) {
 
 	// Also task list file manipulations.
 	delete dumper;
+	log("Task \"" + ToString(taskName) + "\" finished.");
 
 	#if USE_MUTEX
 		if (!forceDisableMutex) pthread_mutex_unlock(&mutex);
@@ -134,17 +221,17 @@ void acWatcher::runTask(const char* taskName) {
 		SET_BINARY_MODE(sqlFile);
 		SET_BINARY_MODE(zlbFile);
 
-		cout << "[" << taskName << "] Compressing..." << endl;
+		taskLog << "[" << taskName << "] Compressing..." << endl;
 		int startTime = time( NULL );
 		zlibber->pack(sqlFile, zlbFile, 9);
-		cout << "[" << taskName << "] Compression finished in " << ( time( NULL ) - startTime ) << " seconds." << endl;
+		taskLog << "[" << taskName << "] Compression finished in " << ( time( NULL ) - startTime ) << " seconds." << endl;
 
 		fclose (zlbFile);
 		fclose (sqlFile);
 		remove (ToString(outName + ".sql").c_str());
-	} else cout << "[" << taskName << "] Compression skipped." << endl;
+	} else taskLog << "[" << taskName << "] Compression skipped." << endl;
 
-	cout.close();
+	taskLog.close();
 }
 
 #endif

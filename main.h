@@ -1,10 +1,32 @@
+/*
+Copyright (C) 2011  Kain Winterheart <http://facebook.com/kain.winterheart>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef ACDUMPER_H
 #define ACDUMPER_H
 
-#define CONFIG "dumper.conf"
-#define USE_MUTEX true
+#define CONFIG "acDumper.conf"
+#define TASKLIST "acDumperTasks.conf"
 
+#define USE_MUTEX true
 #define JOB_STATUS_ACTIVE "active"
+
+#ifdef _WIN32
+	#define CMD_KILL "DIEPLZ"
+#endif
 
 #include "multidimensional.h"
 
@@ -60,6 +82,15 @@ inline int indexOf(const char* where, const char* what) {
 }
 
 inline bool fileExists(const char* fileName) {
+    std::ifstream ifile( fileName );
+    if ( ifile.is_open() ) {
+        ifile.close();
+        return true;
+    } else return false;
+}
+
+inline bool fileExists(std::string _fileName) {
+	const char* fileName = _fileName.c_str();
     std::ifstream ifile( fileName );
     if ( ifile.is_open() ) {
         ifile.close();
