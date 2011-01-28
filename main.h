@@ -57,6 +57,26 @@ inline bool IsNull( const char* obj ) {
 	}
 }
 
+#ifdef _WIN32
+inline bool IsNull( const wchar_t* obj ) {
+	if (obj == NULL) return true;
+	std::string _obj = ToString(obj);
+	if (_obj.length() > 0) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+inline const char* wchar2char( const wchar_t* obj ) {
+	char *pMBBuffer = new char [32768];
+	wcstombs(pMBBuffer, obj, 32768);
+	std::string out = ToString(pMBBuffer);
+	delete pMBBuffer;
+	return out.c_str();
+}
+#endif
+
 inline std::vector<std::string>& split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;

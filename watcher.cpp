@@ -43,7 +43,16 @@ acWatcher::acWatcher() {
 
 		#ifdef _WIN32
 			acConfig->setSection("win32");
-			conf_ConnFile = acConfig->getStringValue("connectionFile");
+
+			const char* _ConnFile = acConfig->getStringValue("connectionFile");
+
+			int len = strlen(_ConnFile)+1;
+			wchar_t* wText = new wchar_t[len];
+			memset(wText,0,len);
+			::MultiByteToWideChar(  CP_ACP, 0,_ConnFile, -1, wText, len );
+			conf_ConnFile = wText;
+			//delete[] wText;
+
 			conf_BeDaemon = 1;
 		#else
 			acConfig->setSection("linux");
@@ -89,7 +98,7 @@ void acWatcher::log(string data) {
 		if (IsNull(conf_LogFile)) return;
 
 		time_t logTime = time( NULL );
-		char* timeStr = NULL;
+		char timeStr[100];
 
 		strftime(timeStr, 100, "%d-%m-%Y %H:%M:%S", localtime( &logTime ));
 
@@ -228,6 +237,7 @@ void acWatcher::runTask(const char* taskName) {
 
 		fclose (zlbFile);
 		fclose (sqlFile);
+		sleep(1);
 		remove (ToString(outName + ".sql").c_str());
 	} else taskLog << "[" << taskName << "] Compression skipped." << endl;
 

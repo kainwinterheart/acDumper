@@ -57,10 +57,11 @@ public:
     unsigned int conf_MaxThreads;
 
 	#ifdef _WIN32
-		const char* conf_ConnFile;
-	#else
-		bool conf_BeDaemon;
+		const wchar_t* conf_ConnFile;
 	#endif
+
+	bool conf_BeDaemon;
+
     /* ********************* */
 
 private:

@@ -23,12 +23,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <pcrecpp.h>
 #include <time.h>
 
+/* Well, they ARE here... */
+// #ifndef _WIN32
+#include <signal.h>
+#include <dirent.h>
+#include <sys/stat.h>
+// #endif
+/* ********************** */
+
 #ifdef _WIN32
 	#include <windows.h>
-#else
-	#include <signal.h>
-	#include <dirent.h>
-	#include <sys/stat.h>
+	#include <winbase.h>
 #endif
 
 using namespace std;
@@ -37,7 +42,15 @@ using namespace rude;
 
 acWatcher* watcher;
 
-#ifndef _WIN32
+#ifdef _WIN32
+void* exterminate(void* pointer) {
+	watcher->log("Received KILL request, stopping " + ToString(watcher->currentTasks) + " job(s) and exiting, please wait.");
+	sleep(5);
+	watcher->Deactivate();
+	pthread_exit(NULL);
+	return NULL;
+}
+#else
 void sigHandle(int sig) {
 	watcher->Deactivate();
 	watcher->log("Caught signal " + ToString(sig) + ", stopping " + ToString(watcher->currentTasks) + " job(s) and exiting, please wait.");
@@ -200,7 +213,7 @@ string acDumper::getSaveDir() {
 
 	_saveDir = _saveDir + separator + taskName + "_" + ToString( startTime ) + separator;
 
-	#ifdef _WIN32
+	//#ifdef _WIN32
 	// Commented code is for VS2008, but I think I can't compile it on VS...
 
 	/*int len = strlen(_saveDir.c_str())+1;
@@ -209,21 +222,25 @@ string acDumper::getSaveDir() {
 	::MultiByteToWideChar(  CP_ACP, NULL,_saveDir.c_str(), -1, wText,len );
 
 	if (CreateDirectory(wText, NULL) == 0) {*/
-	if (CreateDirectory(_saveDir.c_str(), NULL) == 0) {
+	/*if (CreateDirectory(_saveDir.c_str(), NULL) == 0) {
 		if (GetLastError() == ERROR_PATH_NOT_FOUND) {
 			mustBreak = true;
 			_saveDir = "";
 		}
-	}
+	}*/
 	//delete[] wText;
-	#else
+	//#else
 	if (closedir(opendir(_saveDir.c_str())) == -1) {
+		#ifdef _WIN32
+		if (mkdir(_saveDir.c_str()) == -1) {
+		#else
 		if (mkdir(_saveDir.c_str(), 0755) == -1) {
+		#endif
 			mustBreak = true;
 			_saveDir = "";
 		}
 	}
-	#endif
+	//#endif
 
 	saveDir = _saveDir;
 	return saveDir;
@@ -525,43 +542,69 @@ void* scannerThread(void* pointer) {
 #ifdef _WIN32
 // win32 agent connection monitor thread
 void* connMonitor(void* pointer) {
-	struct stat buf;
+	struct _stat buf;
 	int lastMTime = 0;
-	char* cmd = NULL;
+	int newMTime = 0;
 	FILE* connFile;
+	pthread_t miscThread;
+	bool canContinue = true;
 
-	while (watcher->isActive()) {
-		if (!fileExists(watcher->conf_ConnFile)) fclose(fopen(watcher->conf_ConnFile, "w"));
+	while ((watcher->isActive()) && (canContinue)) {
+		char* cmd = new char[100];
+		try {
+				fclose(fopen(wchar2char(watcher->conf_ConnFile), "w"));
+		} catch(char * err) {}
 
-		if (!stat(watcher->conf_ConnFile, &buf)) {
-			if (buf.st_mtim.tv_sec > lastMTime) {
-				connFile = fopen(watcher->conf_ConnFile, "r");
-				cmd = fgets(cmd, 100, connFile);
-				fclose(connFile);
+		try {
+		if (fileExists(wchar2char(watcher->conf_ConnFile)))
+			if (!_wstat(watcher->conf_ConnFile, &buf)) {
+				newMTime = buf.st_mtime;
+				if (newMTime > lastMTime) {
+					sleep(1);
+					connFile = fopen(wchar2char(watcher->conf_ConnFile), "r");
+					cmd = fgets(cmd, 100, connFile);
+					fclose(connFile);
+				}
 			}
-		}
+		} catch (char * err) {}
 
 		if (!IsNull(cmd)) {
 			string _cmd = ToString(cmd);
+			if(_cmd.length() > 3) _cmd = _cmd.substr(0, _cmd.length()-1);
 
 			// Maybe someday I'll add some other commands...
-			if (_cmd == CMD_KILL) watcher->Deactivate();
+			if (_cmd == CMD_KILL) {
+				canContinue = false;
+				pthread_create( &miscThread, NULL, exterminate, NULL );
+			}
 		}
 
-		fclose(fopen(watcher->conf_ConnFile, "w"));
-		if (!stat(watcher->conf_ConnFile, &buf)) lastMTime = buf.st_mtim.tv_sec;
-		cmd = NULL;
-		sleep(1);
+		if ((canContinue) && (newMTime > lastMTime)) {
+			sleep(2);
+			if (!IsNull(cmd)) fclose(fopen(wchar2char(watcher->conf_ConnFile), "w"));
+			if (!_wstat(watcher->conf_ConnFile, &buf)) lastMTime = newMTime;
+		} else if (canContinue) sleep(1);
+		delete[] cmd;
 	}
 
 	watcher->log("acDumper Agent connection monitor thread is dead.");
 	pthread_exit(NULL);
+
+	#ifdef _WIN32
+		return NULL;
+	#endif
 }
 #endif
 
 int main(int argc, char *argv[]) {
 	// Defined in the top of this file
 	watcher = new acWatcher;
+
+	if (watcher->conf_BeDaemon) {
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
+	}
 
 	#ifndef _WIN32
 	if (watcher->conf_BeDaemon) {
@@ -584,10 +627,6 @@ int main(int argc, char *argv[]) {
         	delete watcher;
         	exit(EXIT_FAILURE);
         }
-
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
 	}
 
 		signal(SIGTERM, &sigHandle);
@@ -630,7 +669,7 @@ int main(int argc, char *argv[]) {
 	while ( watcher->isTaskActive() ) sleep(watcher->currentTasks);
 
 	delete watcher;
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 #endif
