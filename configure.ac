@@ -12,18 +12,14 @@ AC_PROG_CXX
 AC_PROG_CC
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lpcrecpp':
-AC_CHECK_LIB([pcrecpp], [main])
-# FIXME: Replace `main' with a function in `-lpthread':
-AC_CHECK_LIB([pthread], [main])
-# FIXME: Replace `main' with a function in `-lrudeconfig':
-AC_CHECK_LIB([rudeconfig], [main])
-# FIXME: Replace `main' with a function in `-lz':
-AC_CHECK_LIB([z], [main])
+AC_CHECK_LIB([pcrecpp], [main], [], [AC_MSG_ERROR([libpcrecpp is missing.])])
+AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([libpthread is missing.])])
+AC_CHECK_LIB([rudeconfig], [main], [], [AC_MSG_ERROR([librudeconfig is missing.])])
+AC_CHECK_LIB([z], [deflate], [], [AC_MSG_ERROR([libz is missing.])])
 
 # Checks for header files.
 AC_FUNC_ALLOCA
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h fenv.h float.h limits.h malloc.h memory.h netinet/in.h stddef.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h sys/timeb.h syslog.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h fenv.h float.h limits.h malloc.h memory.h netinet/in.h stddef.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h sys/timeb.h syslog.h unistd.h mysql/mysql.h pthread.h zlib.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
