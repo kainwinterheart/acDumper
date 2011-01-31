@@ -13,7 +13,7 @@ outdir = "/home/dumper"
 
 # and yeah, it's important to write exactly "\\" for windows
 
-encoding = utf-8
+encoding = utf8
 jobtime = * 17 */1 * *
 
 [sample_task_2]
