@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 #include "threads.h"
 #include <pcrecpp.h>
-#include <time.h>
 
 /* Well, they ARE here... */
 // #ifndef _WIN32
@@ -48,7 +47,6 @@ void* exterminate(void* pointer) {
 	sleep(5);
 	watcher->Deactivate();
 	pthread_exit(NULL);
-	return NULL;
 }
 #else
 void sigHandle(int sig) {
@@ -533,10 +531,6 @@ void* scannerThread(void* pointer) {
 
 	watcher->log("Watcher thread is dead.");
 	pthread_exit(NULL);
-
-	#ifdef _WIN32
-		return NULL;
-	#endif
 }
 
 #ifdef _WIN32
@@ -589,16 +583,14 @@ void* connMonitor(void* pointer) {
 
 	watcher->log("acDumper Agent connection monitor thread is dead.");
 	pthread_exit(NULL);
-
-	#ifdef _WIN32
-		return NULL;
-	#endif
 }
 #endif
 
 int main(int argc, char *argv[]) {
 	// Defined in the top of this file
 	watcher = new acWatcher;
+
+	if (argc > 1) watcher->conf_BeDaemon = false;
 
 	if (watcher->conf_BeDaemon) {
 		close(STDIN_FILENO);
@@ -636,15 +628,17 @@ int main(int argc, char *argv[]) {
 
 	watcher->log("Initialized.");
 
-	#ifndef _WIN32
-	// Because it crashed on win32 when I've tested it some time ago... Maybe now it works.
+
 	if (argc > 1) {
+		#ifndef _WIN32
 		watcher->log("Launched for single task.");
 		watcher->deactivateOnTaskFinish = true;
 		watcher->forceDisableMutex = true;
 		threadSetup( argv[1], watcher );
+		#else
+		watcher->log("Win32 version doesn't have any special abilities.");
+		#endif
 	} else {
-	#endif
 
 	#ifdef _WIN32
 	if (!IsNull(watcher->conf_ConnFile)) {
@@ -660,9 +654,9 @@ int main(int argc, char *argv[]) {
 	pthread_create( &watcherThread, NULL, scannerThread, NULL );
 	watcher->log("Watcher thread started.");
 
-	#ifndef _WIN32
+	//#ifndef _WIN32
 	}
-	#endif
+	//#endif
 
 	// If process needs to be stopped - finish current operation first
 	while ( watcher->isActive() ) sleep(1);

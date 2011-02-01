@@ -18,6 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef ACDUMPER_H
 #define ACDUMPER_H
 
+#if defined (cygwin) || defined (CYGWIN) || defined (WIN32)
+#define _WIN32
+#endif
+
 #define CONFIG "acDumper.conf"
 #define TASKLIST "acDumperTasks.conf"
 
@@ -32,11 +36,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <fstream>
 #include <sstream>
+#include <time.h>
 
 #ifdef _WIN32
 	#include <winsock.h>
 #endif
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <rude/config.h>
 
 /* Googled snippets */
