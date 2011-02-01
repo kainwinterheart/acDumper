@@ -7,6 +7,15 @@ AM_INIT_AUTOMAKE(acDumper, 0.1)
 AC_CONFIG_SRCDIR([main.h])
 AC_CONFIG_HEADERS([config.h])
 
+AC_ARG_ENABLE(cygwin,
+[  --enable-cygwin    For building on win32],
+[case "${enableval}" in
+  yes) cygwin=true ;;
+  no)  cygwin=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-cygwin) ;;
+esac],[cygwin=false])
+AM_CONDITIONAL(CYGWIN, test x$cygwin = xtrue)
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -34,7 +43,7 @@ AC_CHECK_MEMBERS([struct stat.st_rdev])
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MKTIME
-AC_FUNC_STRNLEN
+# AC_FUNC_STRNLEN
 AC_CHECK_FUNCS([alarm bzero localtime_r memset mkdir modf regcomp rint stpcpy strchr strpbrk strrchr strstr strtol strtoul strtoull])
 
 AC_OUTPUT(Makefile)
