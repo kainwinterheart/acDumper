@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-@CYGWIN_TRUE@am__append_1 = -g -c -fmessage-length=0 -g -pipe -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -m32 -fasynchronous-unwind-tables -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -fno-strict-aliasing -fwrapv
+@CYGWIN_TRUE@am__append_1 = -g -pipe -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -m32 -fasynchronous-unwind-tables -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -fno-strict-aliasing -fwrapv
 @CYGWIN_TRUE@am__append_2 = -lmysql
 @CYGWIN_FALSE@am__append_3 = `mysql_config --cflags`
 @CYGWIN_FALSE@am__append_4 = `mysql_config --libs`
