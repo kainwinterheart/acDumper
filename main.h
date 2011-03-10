@@ -126,19 +126,23 @@ inline bool fileExists(std::string _fileName) {
 
 // Kinda perl way
 inline std::string trim(std::string _string) {
-	pcrecpp::RE_Options *reopt = new pcrecpp::RE_Options;
-	reopt->set_caseless(true);
-	reopt->set_utf8(true);
+	if ((_string == "\\n") || (_string == "\\r") || (_string == "\\r\\n") || (_string == "\\n\\r")) {
+		_string = "";
+	} else {
+		pcrecpp::RE_Options *reopt = new pcrecpp::RE_Options;
+		reopt->set_caseless(true);
+		reopt->set_utf8(true);
 
-	pcrecpp::RE *re1 = new pcrecpp::RE ("^\\s+", *reopt);
-	pcrecpp::RE *re2 = new pcrecpp::RE ("\\s+$", *reopt);
+		pcrecpp::RE *re1 = new pcrecpp::RE ("^\\s+", *reopt);
+		pcrecpp::RE *re2 = new pcrecpp::RE ("\\s+$", *reopt);
 
-	re1->GlobalReplace("", &_string);
-	re1->GlobalReplace("", &_string);
+		re1->GlobalReplace("", &_string);
+		re2->GlobalReplace("", &_string);
 
-	delete re2;
-	delete re1;
-	delete reopt;
+		delete re2;
+		delete re1;
+		delete reopt;
+	}
 
 	return _string;
 }
