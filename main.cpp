@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "main.h"
 #include "threads.h"
-#include <pcrecpp.h>
 
 /* Well, they ARE here... */
 // #ifndef _WIN32
@@ -235,7 +234,6 @@ string acDumper::getSaveDir() {
 		#else
 		if (mkdir(_saveDir.c_str(), 0755) == -1) {
 		#endif
-			//mustBreak = false;
 			mustBreak = true;
 			_saveDir = "";
 		}
@@ -508,6 +506,7 @@ void* scannerThread(void* pointer) {
 		#endif
 
 		// Mutex here 'cuz it reads data from task list
+		if (!watcher->isTaskActive()) trimFile(TASKLIST);
 		acMultiDim* jobList = watcher->lookForJob();
 
 		#if USE_MUTEX

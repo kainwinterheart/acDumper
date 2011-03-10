@@ -43,6 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include <mysql/mysql.h>
 #include <rude/config.h>
+#include <pcrecpp.h>
 
 /* Googled snippets */
 
@@ -121,6 +122,46 @@ inline bool fileExists(std::string _fileName) {
         ifile.close();
         return true;
     } else return false;
+}
+
+// Kinda perl way
+inline std::string trim(std::string _string) {
+	pcrecpp::RE_Options *reopt = new pcrecpp::RE_Options;
+	reopt->set_caseless(true);
+	reopt->set_utf8(true);
+
+	pcrecpp::RE *re1 = new pcrecpp::RE ("^\\s+", *reopt);
+	pcrecpp::RE *re2 = new pcrecpp::RE ("\\s+$", *reopt);
+
+	re1->GlobalReplace("", &_string);
+	re1->GlobalReplace("", &_string);
+
+	delete re2;
+	delete re1;
+	delete reopt;
+
+	return _string;
+}
+
+inline void trimFile(char * _fileName) {
+	std::string data;
+
+	std::ifstream inFile(_fileName);
+	while(!inFile.eof()) {
+		std::string temp;
+		getline(inFile, temp);
+		temp = trim(temp);
+
+		if (!IsNull(temp.c_str())) {
+			data += temp + "\n";
+		}
+
+	}
+	inFile.close();
+
+	FILE* outFile = fopen(_fileName, "w");
+	fputs(data.c_str(), outFile);
+	fclose(outFile);
 }
 
 // Won't use it, but let it be here
