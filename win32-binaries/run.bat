@@ -1,1 +1,1 @@
-start acDumper.exe
+start /b /i acDumper.exe
