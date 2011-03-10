@@ -55,10 +55,14 @@ inline std::string ToString( const C& obj ) {
 }
 
 inline bool IsNull( const char* obj ) {
+	try {
 	if (obj == NULL) return true;
-	if (strlen(obj) > 0) {
+	else if (strlen(obj) > 0) {
 		return false;
 	} else {
+		return true;
+	}
+	} catch (const char * err) {
 		return true;
 	}
 }

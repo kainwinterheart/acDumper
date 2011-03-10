@@ -57,7 +57,7 @@ public:
     unsigned int conf_MaxThreads;
 
 	#ifdef _WIN32
-		const wchar_t* conf_ConnFile;
+		wchar_t* conf_ConnFile;
 	#endif
 
 	bool conf_BeDaemon;

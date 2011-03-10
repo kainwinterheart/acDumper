@@ -26,6 +26,12 @@ using namespace rude;
 
 acWatcher::acWatcher() {
 	Activate();
+
+	conf_LogFile = "";
+	conf_MaxThreads = 0;
+	conf_BeDaemon = 0;
+	//conf_ConnFile will be initialized below
+
 	taskListFile = "";
 	currentTasks = 0;
 	lfjActive = false;
@@ -47,11 +53,9 @@ acWatcher::acWatcher() {
 			const char* _ConnFile = acConfig->getStringValue("connectionFile");
 
 			int len = strlen(_ConnFile)+1;
-			wchar_t* wText = new wchar_t[len];
-			memset(wText,0,len);
-			::MultiByteToWideChar(  CP_ACP, 0,_ConnFile, -1, wText, len );
-			conf_ConnFile = wText;
-			//delete[] wText;
+			conf_ConnFile = new wchar_t[len];
+			memset(conf_ConnFile,0,len);
+			::MultiByteToWideChar(  CP_ACP, 0, _ConnFile, -1, conf_ConnFile, len );
 
 			conf_BeDaemon = 1;
 		#else
