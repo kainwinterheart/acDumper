@@ -229,11 +229,13 @@ string acDumper::getSaveDir() {
 	//delete[] wText;
 	//#else
 	if (closedir(opendir(_saveDir.c_str())) == -1) {
+		// #if defined (WIN32) || defined (_WIN32)
 		#ifdef _WIN32
 		if (mkdir(_saveDir.c_str()) == -1) {
 		#else
 		if (mkdir(_saveDir.c_str(), 0755) == -1) {
 		#endif
+			//mustBreak = false;
 			mustBreak = true;
 			_saveDir = "";
 		}

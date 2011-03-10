@@ -180,6 +180,11 @@ void acWatcher::runTask(const char* taskName) {
 	string outName = dumper->getSaveDir() + ToString( taskName );
 	ofstream taskLog ( ToString(outName + ".log").c_str(), ios::trunc );
 
+	taskLog << "[" << taskName << "]" << ( (dumper -> isConnected) ? " Connected" : " Connection failed" ) << endl;
+	taskLog << "[" << taskName << "]" << ( (isActive()) ? " Active" : " Inactive" ) << endl;
+	taskLog << "[" << taskName << "]" << ( (!dumper->mustBreak) ? " Continuing" : " Must break" ) << endl;
+	taskLog << "[" << taskName << "]" << " SaveDir is " << dumper->getSaveDir() << endl;
+
 	if ((dumper -> isConnected) && (isActive()) && (!dumper->mustBreak) ) {
 	   	int startTime = dumper -> getStartTime();
 	   	taskLog << "[" << taskName << "] Initialized in thread " << currentTasks << "." << endl;
