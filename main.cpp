@@ -46,6 +46,7 @@ void* exterminate(void* pointer) {
 	sleep(5);
 	watcher->Deactivate();
 	pthread_exit(NULL);
+	return NULL;
 }
 #else
 void sigHandle(int sig) {
@@ -365,7 +366,6 @@ acMultiDim* acDumper::getStructure(const char* _tableName) {
 int acDumper::saveData(string tableName, string fieldNames, string tableStructure) {
 	MYSQL_RES* res = query("select " + fieldNames + " from " + tableName + ";");
 	if (res == NULL) return 0;
-	MYSQL_ROW* row = new MYSQL_ROW;
 	string fieldValue = "";
 
 	int rowCount = mysql_num_rows( res );
@@ -391,6 +391,7 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 	watcher->log("Dumping table " + tableName + "...");
 
 	if( rowCount > 0 ) {
+		MYSQL_ROW* row = new MYSQL_ROW;
 		while( ( *row = mysql_fetch_row( res ) ) != NULL ) {
 			if (mustBreak) break;
 			if (watcher->conf_BeDaemon == 0) {
@@ -428,11 +429,11 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 			if (mustBreak) break;
 		}
 		if (watcher->conf_BeDaemon == 0) cout << endl;
+		delete row;
 	}
 
 	datafile.close();
 	delete tableData;
-	delete row;
 	mysql_free_result(res);
 
 	delete re4;
@@ -532,6 +533,10 @@ void* scannerThread(void* pointer) {
 
 	watcher->log("Watcher thread is dead.");
 	pthread_exit(NULL);
+
+	#ifdef _WIN32
+		return NULL;
+	#endif
 }
 
 #ifdef _WIN32
@@ -587,6 +592,7 @@ void* connMonitor(void* pointer) {
 
 	watcher->log("acDumper Agent connection monitor thread is dead.");
 	pthread_exit(NULL);
+	return NULL;
 }
 #endif
 

@@ -18,8 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef ACDUMPER_H
 #define ACDUMPER_H
 
+#ifndef _WIN32
 #if defined (cygwin) || defined (CYGWIN) || defined (WIN32)
 #define _WIN32
+#endif
 #endif
 
 #define CONFIG "acDumper.conf"
