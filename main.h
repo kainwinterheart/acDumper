@@ -59,8 +59,7 @@ inline bool IsNull( const C& obj ) {
 	if (obj == NULL) {
 		return true;
 	} else {
-		std::string _obj = ToString(obj);
-		if (_obj.empty()) {
+		if (strlen(ToString(obj).c_str()) > 0) {
 			return false;
 		} else {
 			return true;
