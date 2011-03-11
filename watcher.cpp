@@ -67,7 +67,10 @@ acWatcher::acWatcher() {
 		conf_BeDaemon = 1;
 	}
 
-	if(!IsNull(conf_LogFile)) fclose(fopen(conf_LogFile, "w"));
+	if(!IsNull(conf_LogFile)) {
+		FILE* newFile = fopen(conf_LogFile, "w");
+		if (newFile != NULL) fclose(newFile);
+	}
 
 	#if USE_MUTEX
 		pthread_mutex_init(&mutex, NULL);

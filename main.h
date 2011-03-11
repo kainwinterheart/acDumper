@@ -54,30 +54,21 @@ inline std::string ToString( const C& obj ) {
 	return out.str();
 }
 
-inline bool IsNull( const char* obj ) {
-	try {
-	if (obj == NULL) return true;
-	else if (strlen(obj) > 0) {
-		return false;
+template< typename C >
+inline bool IsNull( const C& obj ) {
+	if (obj == NULL) {
+		return true;
 	} else {
-		return true;
-	}
-	} catch (const char * err) {
-		return true;
+		std::string _obj = ToString(obj);
+		if (_obj.empty()) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 }
 
 #ifdef _WIN32
-inline bool IsNull( const wchar_t* obj ) {
-	if (obj == NULL) return true;
-	std::string _obj = ToString(obj);
-	if (_obj.length() > 0) {
-		return false;
-	} else {
-		return true;
-	}
-}
-
 inline const char* wchar2char( const wchar_t* obj ) {
 	char *pMBBuffer = new char [32768];
 	wcstombs(pMBBuffer, obj, 32768);
@@ -151,7 +142,7 @@ inline std::string trim(std::string _string) {
 	return _string;
 }
 
-inline void trimFile(char * _fileName) {
+inline void trimFile(const char * _fileName) {
 	std::string data;
 
 	std::ifstream inFile(_fileName);

@@ -506,7 +506,7 @@ void* scannerThread(void* pointer) {
 		#endif
 
 		// Mutex here 'cuz it reads data from task list
-		if (!watcher->isTaskActive()) trimFile(TASKLIST);
+		if (!watcher->isTaskActive()) trimFile(watcher->getTaskListFile());
 		acMultiDim* jobList = watcher->lookForJob();
 
 		#if USE_MUTEX
@@ -543,25 +543,25 @@ void* connMonitor(void* pointer) {
 	FILE* connFile;
 	pthread_t miscThread;
 	bool canContinue = true;
+	const char * _ConnFile = wchar2char(watcher->conf_ConnFile);
 
-	while ((watcher->isActive()) && (canContinue)) {
+	while ((watcher->isActive()) && (canContinue) && (!IsNull(_ConnFile))) {
 		char* cmd = new char[100];
-		try {
-				fclose(fopen(wchar2char(watcher->conf_ConnFile), "w"));
-		} catch(char * err) {}
+		if ((lastMTime == 0) && (newMTime == 0)) {
+			FILE* newFile = fopen(_ConnFile, "w");
+			if (newFile != NULL) fclose(newFile);
+		}
 
-		try {
-		if (fileExists(wchar2char(watcher->conf_ConnFile)))
+		if (fileExists(_ConnFile))
 			if (!_wstat(watcher->conf_ConnFile, &buf)) {
 				newMTime = buf.st_mtime;
 				if (newMTime > lastMTime) {
 					sleep(1);
-					connFile = fopen(wchar2char(watcher->conf_ConnFile), "r");
+					connFile = fopen(_ConnFile, "r");
 					cmd = fgets(cmd, 100, connFile);
 					fclose(connFile);
 				}
 			}
-		} catch (char * err) {}
 
 		if (!IsNull(cmd)) {
 			string _cmd = ToString(cmd);
@@ -576,7 +576,10 @@ void* connMonitor(void* pointer) {
 
 		if ((canContinue) && (newMTime > lastMTime)) {
 			sleep(2);
-			if (!IsNull(cmd)) fclose(fopen(wchar2char(watcher->conf_ConnFile), "w"));
+			if (!IsNull(cmd)) {
+				FILE* newFile = fopen(_ConnFile, "w");
+				if (newFile != NULL) fclose(newFile);
+			}
 			if (!_wstat(watcher->conf_ConnFile, &buf)) lastMTime = newMTime;
 		} else if (canContinue) sleep(1);
 		delete[] cmd;
