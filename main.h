@@ -59,7 +59,7 @@ inline bool IsNull( const C& obj ) {
 	if (obj == NULL) {
 		return true;
 	} else {
-		if (strlen(ToString(obj).c_str()) > 0) {
+		if ((strlen(ToString(obj).c_str()) > 0) && (obj != '\0')) {
 			return false;
 		} else {
 			return true;
