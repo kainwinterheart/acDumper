@@ -96,10 +96,10 @@ acMultiDim* acWatcher::lookForJob()
 	{
 		lfjActive = true;
 
-		log('lfj start');
+		log("lfj start");
 		acDumper* dumper = new acDumper();
 		acMultiDim* jobList = dumper -> lookForJob();
-		log('lfj end');
+		log("lfj end");
 
 		delete dumper;
 
