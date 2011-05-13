@@ -20,75 +20,77 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "watcher.h"
 
-struct threadArgs {
+struct threadArgs
+{
 	acWatcher* pWatcher;
 	const char* taskName;
 };
 
-inline void* threadRun(void* pointer) {
-	threadArgs* info = (threadArgs*)pointer;
+inline void* threadRun( void* pointer )
+{
+	threadArgs* info = ( threadArgs* )pointer;
 
-	acWatcher* watcher = info->pWatcher;
-	const char* taskName = info->taskName;
+	acWatcher* watcher = info -> pWatcher;
+	const char* taskName = info -> taskName;
 
 	delete info;
-	if (IsNull(taskName)) pthread_exit(NULL);
-	else watcher->log("Launched thread for task \"" + ToString(taskName) + "\".");
+
+	if( IsNull( taskName ) ) pthread_exit( NULL );
+	else watcher -> log( "Launched thread for task \"" + ToString( taskName ) + "\"." );
 
 	// Also just in case
-	if (watcher->isTaskActive()) sleep(watcher->currentTasks);
+	if( watcher -> isTaskActive() ) sleep( watcher -> currentTasks );
 
 	#if USE_MUTEX
-		if (!watcher->forceDisableMutex) pthread_mutex_lock(&(watcher->mutex));
+		if( !watcher -> forceDisableMutex ) pthread_mutex_lock( &( watcher -> mutex ) );
 	#endif
 
-	watcher->currentTasks++;
+	watcher -> currentTasks++;
 
 	#if USE_MUTEX
-		if (!watcher->forceDisableMutex) pthread_mutex_unlock(&(watcher->mutex));
+		if( !watcher -> forceDisableMutex ) pthread_mutex_unlock( &( watcher -> mutex ) );
 	#endif
 
 	// And finally we're doing a job!
-	watcher->startTask( taskName );
+	watcher -> startTask( taskName );
 
 	#if USE_MUTEX
-		if (!watcher->forceDisableMutex) pthread_mutex_lock(&(watcher->mutex));
+		if ( !watcher -> forceDisableMutex ) pthread_mutex_lock( &( watcher -> mutex ) );
 	#endif
 
-	watcher->currentTasks--;
+	watcher -> currentTasks--;
 
 	#if USE_MUTEX
-		if (!watcher->forceDisableMutex) pthread_mutex_unlock(&(watcher->mutex));
+		if( !watcher -> forceDisableMutex ) pthread_mutex_unlock( &( watcher -> mutex ) );
 	#endif
 
-	if (watcher->deactivateOnTaskFinish) watcher->Deactivate();
+	if( watcher -> deactivateOnTaskFinish ) watcher -> Deactivate();
 
-	watcher->log("Thread for task \"" + ToString(taskName) + "\" exited.");
+	watcher -> log( "Thread for task \"" + ToString( taskName ) + "\" exited." );
 	delete[] taskName;
 
-	pthread_exit(NULL);
-	#ifdef _WIN32
-		return NULL;
-	#endif
+	pthread_exit( NULL );
 }
 
-inline pthread_t threadSetup(const char* _taskName, acWatcher* watcher) {
+inline pthread_t threadSetup( const char* _taskName, acWatcher* watcher )
+{
 	/* Because of these lines I CAN delete jobList in LFJ thread' main */
-	const size_t len = strlen(_taskName);
-	char * taskName = new char[len + 1];
-	strncpy(taskName, _taskName, len);
-	taskName[len] = '\0';
+	const size_t len = strlen( _taskName );
+	char * taskName = new char[ len + 1 ];
+	strncpy( taskName, _taskName, len );
+	taskName[ len ] = '\0';
 	/* *************************************************************** */
 
 	threadArgs* INFO = new threadArgs;
-	INFO->pWatcher = watcher;
-	INFO->taskName = taskName;
+	INFO -> pWatcher = watcher;
+	INFO -> taskName = taskName;
 
 	// Just in case, leave it alone
-	if (watcher->isTaskActive()) sleep(watcher->currentTasks);
+	if( watcher -> isTaskActive() ) sleep( watcher -> currentTasks );
 
 	pthread_t newThread;
-	pthread_create( &newThread, NULL, threadRun, (void*)INFO );
+	pthread_create( &newThread, NULL, threadRun, ( void* )INFO );
+
 	return newThread;
 }
 

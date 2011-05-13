@@ -22,54 +22,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "zlibber.h"
 #include <rude/config.h>
 
-class acWatcher {
-public:
-	acWatcher();
-    ~acWatcher();
+class acWatcher
+{
+	public:
+		acWatcher();
+		~acWatcher();
 
-    void startTask(const char*);
-    void log(std::string);
-    const char* getTaskListFile();
+		void startTask( const char* );
+		void log( std::string );
+		void Activate();
+		void Deactivate();
 
-    bool isActive();
-    bool isTaskActive();
-    bool isLFJActive();
-    bool isPoolFull();
+		const char* getTaskListFile();
+		const char* conf_LogFile;
 
-    void Activate();
-    void Deactivate();
+		bool isActive();
+		bool isTaskActive();
+		bool isLFJActive();
+		bool isPoolFull();
+		bool deactivateOnTaskFinish;
+		bool forceDisableMutex;
+		bool conf_BeDaemon;
 
-    acMultiDim* lookForJob();
+		acMultiDim* lookForJob();
 
-    int currentTasks;
-    bool deactivateOnTaskFinish;
-    bool forceDisableMutex;
+		int currentTasks;
+		unsigned int conf_MaxThreads;
 
-    #if USE_MUTEX
-    	pthread_mutex_t mutex;
-	#endif
+		#if USE_MUTEX
+			pthread_mutex_t mutex;
+		#endif
 
-    acZlibber* zlibber;
+		acZlibber* zlibber;
 
-    /* Configuration options */
-    // main
-    const char* conf_LogFile;
-    unsigned int conf_MaxThreads;
+	private:
+		void runTask( const char* );
 
-	#ifdef _WIN32
-		wchar_t* conf_ConnFile;
-	#endif
+		bool active;
+		bool lfjActive;
 
-	bool conf_BeDaemon;
-
-    /* ********************* */
-
-private:
-    void runTask(const char*);
-    bool active;
-    bool lfjActive;
-    std::string taskListFile;
-    rude::Config* acConfig;
+		std::string taskListFile;
+		rude::Config* acConfig;
 };
 
 #endif
