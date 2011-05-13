@@ -297,7 +297,7 @@ acMultiDim* acDumper::getTables()
     MYSQL_RES* res = query( "show tables;" );
     if( res == NULL ) return 0;
 
-    MYSQL_ROW* row = NULL;
+    MYSQL_ROW* row = new MYSQL_ROW;
     acMultiDim* tableList = new acMultiDim;
 
 	if( mysql_num_rows( res ) > 0 )
@@ -324,7 +324,7 @@ acMultiDim* acDumper::getStructure( const char* _tableName )
 	MYSQL_RES* res = query( "show create table " + tableName + ";" );
 	if (res == NULL) return 0;
 
-	MYSQL_ROW* row = NULL;
+	MYSQL_ROW* row = new MYSQL_ROW;
     acMultiDim* tableStructure = new acMultiDim;
 
     if( ( mysql_num_rows( res ) > 0 ) && ( mysql_num_fields( res ) == 2 ) )
@@ -394,7 +394,7 @@ int acDumper::saveData( string tableName, string fieldNames, string tableStructu
 
 	if( rowCount > 0 )
 	{
-		MYSQL_ROW* row = NULL;
+		MYSQL_ROW* row = new MYSQL_ROW;
 
 		while( ( *row = mysql_fetch_row( res ) ) != NULL )
 		{
