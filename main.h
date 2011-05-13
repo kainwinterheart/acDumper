@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #endif
 
-#define CONFIG "acDumper.conf"
+#define CONFIG "/etc/acDumper.conf"
 #define TASKLIST "acDumperTasks.conf"
 
 #define USE_MUTEX true

@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# chkconfig: 5 20 80
+# description: Autumn Coffee MySQL Dumper
+
+# Source function library.
+if [ -f /etc/init.d/functions ] ; then
+  . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ] ; then
+  . /etc/rc.d/init.d/functions
+else
+  exit 1
+fi
+
+APP="acDumper"
+BIN="/root/$APP/build/$APP"
+
+start() {
+	echo -n $"Starting $APP services: "
+	daemon $BIN
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/$APP || \
+	   RETVAL=1
+	return $RETVAL
+}	
+
+stop() {
+	echo -n $"Shutting down $APP services: "
+	killproc $BIN
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/$APP
+	return $RETVAL
+}	
+
+restart() {
+	stop
+	start
+}	
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart)
+  	restart
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 2
+esac
+
+exit $?
+
