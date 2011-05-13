@@ -180,7 +180,7 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 	for( int i = 0; i < 5; i++ )
 	{
 		if( result ) result = approved[ i ];
-		watcher -> log( ToString( i ) + " is " + ToString( approved[ i ] ) );
+		watcher -> log( ToString( i ) + " is " + ToString( approved[ i ] ) + " for " + ToString( lastTime ) );
 		//if( !result ) break;
 	}
 
