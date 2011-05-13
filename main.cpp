@@ -615,7 +615,6 @@ int main( int argc, char *argv[] )
 
 	watcher -> log( "Initialized." );
 
-
 	if( argc > 1 )
 	{
 		watcher -> log( "Launched for single task." );
