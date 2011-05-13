@@ -174,10 +174,7 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 	// If passed enough time - approving bits that has been tested
 	if( timePassed > testTime )
 		for( int i = 0; i < 4; i++ )
-		{
 			if( isInTestTime[ i ] ) approved[ i ] = true;
-			watcher -> log( ToString( approved[ i ] ) );
-		}
 
 	// Getting final approval
 	for( int i = 0; i < 5; i++ )
