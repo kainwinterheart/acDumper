@@ -47,7 +47,6 @@ acMultiDim* acDumper::lookForJob()
 	for( int i = 0; i < acConfig -> getNumSections(); i++ )
 	{
 		const char* section = acConfig -> getSectionNameAt( i );
-		watcher -> log( ToString( section ) );
 
 		if( !IsNull( section ) )
 		{
@@ -55,6 +54,8 @@ acMultiDim* acDumper::lookForJob()
 
 			const char* jobTime = acConfig -> getStringValue( "jobtime" );
 			const char* status  = acConfig -> getStringValue( "status" );
+
+			watcher -> log( ToString( jobTime ) + " " + ToString( status ) );
 
 			if( ToString( status ) != ToString( JOB_STATUS_ACTIVE ) )
 				if ( isItNow( ToString( jobTime ), atoi( status ) ) ) jobList -> push_dim1( ToString( section ) );
