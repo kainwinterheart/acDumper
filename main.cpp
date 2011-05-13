@@ -81,8 +81,6 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 	delete re1;
 	delete reopt;
 
-	watcher -> log( ToString( jobTime ) + " | " + ToString( lastTime ) + " | " + ToString( tempJobTime ) );
-
 	if( !tempJobTime.empty() ) return false;
 
 	vector<string> dateBits = split( jobTime, ' ' );
@@ -118,6 +116,8 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 
 	unsigned int timePassed = startTime - lastTime;
 	unsigned int testTime = 0;
+
+	watcher -> log( ToString( timePassed ) + " | " + ToString( lastTime ) );
 
 	// Minute
 	string min = dateBits[ 0 ];
