@@ -47,6 +47,7 @@ acMultiDim* acDumper::lookForJob()
 	for( int i = 0; i < acConfig -> getNumSections(); i++ )
 	{
 		const char* section = acConfig -> getSectionNameAt( i );
+		watcher -> log( ToString( section ) );
 
 		if( !IsNull( section ) )
 		{
