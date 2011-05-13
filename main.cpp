@@ -232,6 +232,7 @@ acDumper::acDumper( const char* _taskName )
 	isConnected = false;
 	mustBreak = false;
 	taskName = ToString( _taskName );
+	saveDir = "";
 	initialTaskName = taskName;
 
     task_user 		= NULL;
@@ -263,6 +264,7 @@ acDumper::acDumper( const char* _taskName )
 acDumper::acDumper()
 {
 	isConnected = false;
+	saveDir = "";
 	taskName = "";
 	initialTaskName = taskName;
 	startTime = time( NULL );
