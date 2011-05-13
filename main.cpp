@@ -176,12 +176,13 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 		for( int i = 0; i < 4; i++ )
 			if( isInTestTime[ i ] ) approved[ i ] = true;
 
+	watcher -> log( ToString( min ) + " | " + ToString( hour ) + " | " + ToString( dom ) + " | " + ToString( mon ) + " | " + ToString( dow ) );
+
 	// Getting final approval
 	for( int i = 0; i < 5; i++ )
 	{
 		if( result ) result = approved[ i ];
-		watcher -> log( ToString( i ) + " is " + ToString( approved[ i ] ) + " for " + ToString( lastTime ) );
-		//if( !result ) break;
+		if( !result ) break;
 	}
 
 	dateBits.erase( dateBits.begin() );
