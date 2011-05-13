@@ -55,8 +55,6 @@ acMultiDim* acDumper::lookForJob()
 			const char* jobTime = acConfig -> getStringValue( "jobtime" );
 			const char* status  = acConfig -> getStringValue( "status" );
 
-			watcher -> log( ToString( jobTime ) + " " + ToString( status ) );
-
 			if( ToString( status ) != ToString( JOB_STATUS_ACTIVE ) )
 				if ( isItNow( ToString( jobTime ), atoi( status ) ) ) jobList -> push_dim1( ToString( section ) );
 		}
@@ -80,6 +78,8 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 
 	delete re1;
 	delete reopt;
+
+	watcher -> log( ToString( jobTime ) + " | " + ToString( lastTime ) + " | " + ToString( tempJobTime ) );
 
 	if( !tempJobTime.empty() ) return false;
 
