@@ -72,7 +72,7 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 	reopt -> set_utf8( true );
 
 	string tempJobTime = jobTime;
-	RE *re1 = new RE( "(\\*|[0-9]{3}|\\*/[0-9]|\\*/[0-9]{2}){4} (\\*|[A-Z][a-z][a-z])", *reopt );
+	RE *re1 = new RE( "(\\*|[0-9][0-9][0-9]|\\*/[0-9]|\\*/[0-9][0-9]){4} (\\*|[A-Z][a-z][a-z])", *reopt );
 
 	re1 -> GlobalReplace( "", &tempJobTime );
 
