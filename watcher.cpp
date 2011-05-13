@@ -248,15 +248,16 @@ void acWatcher::runTask( const char* taskName )
 		if( !forceDisableMutex ) pthread_mutex_lock( &mutex );
 	#endif
 
+	string outName = dumper -> getSaveDir() + ToString( taskName );
+
 	// Also task list file manipulations.
 	delete dumper;
+
 	log( "Task \"" + ToString( taskName ) + "\" finished." );
 
 	#if USE_MUTEX
 		if( !forceDisableMutex ) pthread_mutex_unlock( &mutex );
 	#endif
-
-	string outName = dumper -> getSaveDir() + ToString( taskName );
 
 	// Yeah, it's scary, but I had errors with pointers here and was sleepy...again
 	// Also compression begins AFTER job is marked as completed
