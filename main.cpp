@@ -127,7 +127,7 @@ bool acDumper::isItNow( string jobTime, unsigned int lastTime )
 			min = split( min, '/' )[ 1 ];
 			testTime += ( atoi( min.c_str() ) * 60 );
 			isInTestTime[ 0 ] = true;
-		} else if ( atoi( min.c_str() ) == hrTime -> tm_min ) approved[ 0 ] = true;
+		} else if( atoi( min.c_str() ) == hrTime -> tm_min ) approved[ 0 ] = true;
 	}
 
 	// Hour

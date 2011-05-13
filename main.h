@@ -54,7 +54,7 @@ inline bool IsNull( const C& obj )
 	}
 }
 
-inline std::vector<std::string>& split( const std::string &s, char delim, std::vector<std::string> &elems )
+inline std::vector<std::string> split( const std::string s, char delim, std::vector<std::string> elems )
 {
     std::stringstream ss( s );
     std::string item;
@@ -64,7 +64,7 @@ inline std::vector<std::string>& split( const std::string &s, char delim, std::v
     return elems;
 }
 
-inline std::vector<std::string> split( const std::string &s, char delim )
+inline std::vector<std::string> split( const std::string s, char delim )
 {
 	std::vector<std::string> elems;
 	return split( s, delim, elems );
