@@ -382,9 +382,7 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 	RE *re4 = new RE ("\\cM",  *reopt);
 
 	acMultiDim* tableData = new acMultiDim;
-
-	string filename = getSaveDir() + taskName + ".sql";
-	ofstream datafile( filename.c_str(), ios::app );
+	std::ostringstream datafile;
 
 	datafile << "DROP TABLE IF EXISTS " << tableName << ";" << endl;
 	datafile << tableStructure << endl;
@@ -392,8 +390,10 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 
 	if( rowCount > 0 ) {
 		MYSQL_ROW* row = new MYSQL_ROW;
+
 		while( ( *row = mysql_fetch_row( res ) ) != NULL ) {
 			if (mustBreak) break;
+
 			if (watcher->conf_BeDaemon == 0) {
 				status = ToString( caret+1 ) + "/" + ToString( rowCount );
 				cout << status << "\r";
@@ -401,24 +401,25 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 
 			for (unsigned int i = 0; i < mysql_num_fields( res ); i++) {
 				if (mustBreak) break;
-    			fieldValue = ToString( (*row)[i] );
+	    			fieldValue = ToString( (*row)[i] );
 
-    			re1->GlobalReplace("\\\\\\\\", &fieldValue);
-    			re2->GlobalReplace("\\\\\'", &fieldValue);
-    			re3->GlobalReplace("\\\\\"", &fieldValue);
-    			re4->GlobalReplace("", &fieldValue);
+	    			re1->GlobalReplace("\\\\\\\\", &fieldValue);
+	    			re2->GlobalReplace("\\\\\'", &fieldValue);
+	    			re3->GlobalReplace("\\\\\"", &fieldValue);
+	    			re4->GlobalReplace("", &fieldValue);
 
-    			fieldValue = "\"" + fieldValue + "\"";
+	    			fieldValue = "\"" + fieldValue + "\"";
 
-	    		if (( i == 0 ) && (caret == 0)) {
-	    			tableData->push_dim1( fieldValue );
-	    		} else if (( i == 0 ) && (caret > 0)) {
-	    			tableData->set_dim1( 0, fieldValue );
-	    		} else {
-	    			tableData->set_dim1( 0, tableData->get_dim1(0) + ", " + fieldValue );
-	    		}
-	    		(*row)[i] = NULL;
-	    		if (mustBreak) break;
+		    		if (( i == 0 ) && (caret == 0)) {
+		    			tableData->push_dim1( fieldValue );
+		    		} else if (( i == 0 ) && (caret > 0)) {
+		    			tableData->set_dim1( 0, fieldValue );
+		    		} else {
+		    			tableData->set_dim1( 0, tableData->get_dim1(0) + ", " + fieldValue );
+		    		}
+
+		    		(*row)[i] = NULL;
+		    		if (mustBreak) break;
 			}
 
 			datafile << "INSERT INTO " << tableName <<
@@ -428,11 +429,11 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 			caret++;
 			if (mustBreak) break;
 		}
+
 		if (watcher->conf_BeDaemon == 0) cout << endl;
 		delete row;
 	}
 
-	datafile.close();
 	delete tableData;
 	mysql_free_result(res);
 
@@ -441,6 +442,14 @@ int acDumper::saveData(string tableName, string fieldNames, string tableStructur
 	delete re2;
 	delete re1;
 	delete reopt;
+
+	if( !mustBreak )
+	{
+	        string filename = getSaveDir() + taskName + ".sql";
+	        ofstream sqlfile( filename.c_str(), ios::app );
+	        sqlfile << datafile.str();
+	        sqlfile.close();
+	}
 
     return caret;
 }
