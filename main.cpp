@@ -390,10 +390,13 @@ int acDumper::saveData( string tableName, string fieldNames, string tableStructu
 	RE *re4 = new RE( "\\cM",  *reopt );
 
 	acMultiDim* tableData = new acMultiDim;
-	std::ostringstream datafile;
+//	std::ostringstream datafile;
+	string filename = getSaveDir() + taskName + ".sql";
+	ofstream datafile( filename.c_str(), ios::app );
 
 	datafile << "DROP TABLE IF EXISTS " << tableName << ";" << endl;
 	datafile << tableStructure << endl;
+
 	watcher -> log( "Dumping table " + tableName + "..." );
 
 	if( rowCount > 0 )
@@ -448,6 +451,8 @@ int acDumper::saveData( string tableName, string fieldNames, string tableStructu
 		delete row;
 	}
 
+	datafile.close();
+
 	delete tableData;
 	mysql_free_result( res );
 
@@ -456,7 +461,7 @@ int acDumper::saveData( string tableName, string fieldNames, string tableStructu
 	delete re2;
 	delete re1;
 	delete reopt;
-
+/*
 	if( !mustBreak )
 	{
 	        string filename = getSaveDir() + taskName + ".sql";
@@ -464,7 +469,7 @@ int acDumper::saveData( string tableName, string fieldNames, string tableStructu
 	        sqlfile << datafile.str();
 	        sqlfile.close();
 	}
-
+*/
     return caret;
 }
 
